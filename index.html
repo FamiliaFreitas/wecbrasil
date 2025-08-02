@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Serviços - WEC Brasil</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    .hidden { display: none; }
+  </style>
+</head>
+<body class="p-4">
+  <div class="container">
+    <h1 class="mb-4">Registro de Serviços - WEC Brasil</h1>
+
+    <!-- Login -->
+    <div class="card mb-4" id="loginCard">
+      <div class="card-header">Login</div>
+      <div class="card-body">
+        <form id="formLogin">
+          <input type="text" class="form-control mb-2" id="loginUsuario" placeholder="Usuário" required>
+          <div class="input-group mb-2">
+             <input type="password" class="form-control" id="loginSenha" placeholder="Senha" required>
+             <button type="button" class="btn btn-outline-secondary" id="toggleLoginSenha">👁️</button>
+          </div>
+          <button type="submit" class="btn btn-primary">Entrar</button>
+        </form>
+        <div class="mt-3">
+          <span>Não tem conta?</span>
+          <button class="btn btn-link p-0" id="btnMostrarCadastro">Cadastre-se</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cadastro individual -->
+    <div class="card mb-4 hidden" id="cadastroIndividualCard">
+      <div class="card-header">Cadastro de Novo Usuário</div>
+      <div class="card-body">
+        <form id="formCadastroIndividual">
+          <input type="text" class="form-control mb-2" id="nomeCadastroIndividual" placeholder="Nome de usuário" required>
+          <div class="input-group mb-2">
+             <input type="password" class="form-control" id="senhaCadastroIndividual" placeholder="Senha" required>
+             <button type="button" class="btn btn-outline-secondary" id="toggleCadastroSenha">👁️</button>
+          </div>
+          <button type="submit" class="btn btn-success">Cadastrar</button>
+          <button type="button" class="btn btn-link" id="btnVoltarLogin">Voltar ao login</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Cadastro de usuários (somente para admin) -->
+    <div class="card mb-4 hidden" id="cadastroCard">
+      <div class="card-header">Cadastro de Usuário</div>
+      <div class="card-body">
+        <form id="formMissionario">
+          <input type="text" class="form-control mb-2" id="nomeMissionario" placeholder="Nome do usuário" required>
+          <input type="password" class="form-control mb-2" id="senhaMissionario" placeholder="Senha" required>
+          <select class="form-select mb-2" id="tipoUsuario">
+            <option value="usuario">Usuário</option>
+            <option value="admin">Administrador</option>
+          </select>
+          <button type="submit" class="btn btn-primary">Cadastrar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Alterar senha -->
+    <div class="card mb-4 hidden" id="alterarSenhaCard">
+      <div class="card-header">Alterar Senha</div>
+      <div class="card-body">
+        <form id="formAlterarSenha">
+          <input type="password" class="form-control mb-2" id="senhaAtual" placeholder="Senha atual" required>
+          <input type="password" class="form-control mb-2" id="novaSenha" placeholder="Nova senha" required>
+          <button type="submit" class="btn btn-warning">Alterar Senha</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Registro de uso de serviços -->
+    <div class="card mb-4 hidden" id="registroCard">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Registro de Uso</span>
+        <div>
+          <button class="btn btn-outline-secondary btn-sm" onclick="mostrarAlterarSenha()">Alterar Senha</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <form id="formUso">
+          <div class="mb-2"><strong>Usuário logado:</strong> <span id="usuarioLogado"></span></div>
+          <label>Serviço:</label>
+          <select id="tipoServico" class="form-select mb-2" required onchange="mostrarCamposServico()">
+            <option value="">Selecione</option>
+            <option value="lavanderia">Lavanderia</option>
+            <option value="carro">Uso do Carro</option>
+            <option value="xerox">Xerox</option>
+            <option value="refeicoes">Refeições</option>
+            <option value="hospedagem">Hospedagem</option>
+          </select>
+          <div id="detalhesServico" class="mb-3"></div>
+          <button type="submit" class="btn btn-success">Registrar Uso</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Área para relatórios (somente admin) -->
+    <div class="card hidden" id="relatorioCard">
+      <div class="card-header">Relatório Atual</div>
+      <div class="mb-3 d-flex gap-2 flex-wrap">
+        <div>
+           <label for="dataInicial" class="form-label">De:</label>
+           <input type="date" class="form-control" id="dataInicial">
+      </div>
+      <div>
+         <label for="dataFinal" class="form-label">Até:</label>
+         <input type="date" class="form-control" id="dataFinal">
+      </div>
+  </div>
+      <div class="card-body">
+        <button class="btn btn-info" onclick="gerarRelatorio()">Gerar Relatório</button>
+        <pre id="relatorio" class="mt-3"></pre>
+      </div>
+    </div>
+    <div>
+  <div class="card hidden" id="refeicoesCard">
+     <div class="card-header">Relatório de refeições por período</div>
+     <div class="card-body">
+        <div class="mb-2 d-flex gap-2 flex-wrap">
+           <div>
+              <label for="dataRefInicio" class="form-label">De:</label>
+              <input type="date" class="form-control" id="dataRefInicio">
+           </div>
+           <div>
+              <label for="dataRefFim" class="form-label">Até:</label>
+              <input type="date" class="form-control" id="dataRefFim">
+           </div>
+        </div>
+        <button class="btn btn-success mb-2" onclick="gerarRelatorioRefeicoesPeriodo()">Gerar Relatório</button>
+        <pre id="relatorioRefeicoesPeriodo" class="bg-light p-2 rounded"></pre>
+        <a id="whatsappLinkRefeicoes" class="btn btn-outline-success" href="#" target="_blank" style="display: none;">Compartilhar via WhatsApp</a>
+      </div>
+    </div>
+<div class="card hidden" id="gerenciarUsuariosCard">
+    <div class="card-header">Gerenciar Usuários</div>
+    <div class="card-body">
+       <ul id="listaUsuarios" class="list-group"></ul>
+     </div>
+  </div>
+  <script>
+    function logout() {
+      localStorage.removeItem('usuarioLogado');
+      location.reload();
+    }
+
+    function mostrarCamposServico() {
+  const tipo = document.getElementById('tipoServico').value;
+  const detalhes = document.getElementById('detalhesServico');
+  detalhes.innerHTML = '';
+
+  const hoje = new Date().toISOString().split('T')[0];
+
+  if (tipo === 'lavanderia') {
+    detalhes.innerHTML = `
+      <label>Data:</label>
+      <input type="date" class="form-control mb-2" id="dataLavanderia" value="${hoje}">
+      <label>Quantidade de lavagens:</label>
+      <input type="number" class="form-control mb-2" id="qtdLavagens" min="0" value="">
+      <label>Quantidade de secagens:</label>
+      <input type="number" class="form-control mb-2" id="qtdSecagens" min="0" value="">
+    `;
+  } else if (tipo === 'carro') {
+    detalhes.innerHTML = `
+      <label>Data:</label>
+      <input type="date" class="form-control mb-2" id="dataCarro" value="${hoje}">
+      <label>Km rodados:</label>
+      <input type="number" class="form-control mb-2" id="kmRodado" min="1" value="">
+      <label>Uso:</label>
+      <select class="form-select mb-2" id="usoCarro" onchange="mostrarCampoDepartamento()">
+        <option value="pessoal">Pessoal</option>
+        <option value="departamento">Departamento</option>
+      </select>
+      <div id="campoDepartamento"></div>
+      <label>Quantidade de uso da TAG:</label>
+      <input type="number" class="form-control mb-2" id="qtdTag" min="0" value="">
+    `;
+  } else if (tipo === 'xerox') {
+    detalhes.innerHTML = `
+      <label>Data:</label>
+      <input type="date" class="form-control mb-2" id="dataXerox" value="${hoje}">
+      <label>Quantidade de cópias:</label>
+      <input type="number" class="form-control mb-2" id="qtdXerox" min="1" value="">
+    `;
+  } else if (tipo === 'refeicoes') {
+    detalhes.innerHTML = `
+      <label>Selecionar dias e quantidades:</label>
+      <div id="diasRefeicoes" class="mb-2"></div>
+      <button type="button" class="btn btn-outline-primary btn-sm mb-2" onclick="adicionarDiaRefeicao()">Adicionar Dia</button>
+    `;
+  } else if (tipo === 'hospedagem') {
+    detalhes.innerHTML = `
+      <label>Data de entrada:</label>
+      <input type="date" class="form-control mb-2" id="entrada">
+      <label>Data de saída:</label>
+      <input type="date" class="form-control mb-2" id="saida" onchange="validarHospedagem()">
+      <div id="erroData" class="text-danger"></div>
+    `;
+  }
+}
+
+    function adicionarDiaRefeicao() {
+  const diasContainer = document.getElementById('diasRefeicoes');
+  const index = diasContainer.children.length;
+  const novoDia = document.createElement('div');
+  novoDia.classList.add('mb-2', 'linha-dia');
+  novoDia.innerHTML = `
+    <div class="d-flex align-items-center">
+      <input type="date" class="form-control me-2 data-refeicao" required>
+      <input type="number" class="form-control qtd-refeicao" placeholder="Quantidade" min="1" required>
+      <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.parentElement.parentElement.remove()">X</button>
+    </div>
+  `;
+  diasContainer.appendChild(novoDia);
+    }
+
+    function validarHospedagem() {
+      const entrada = document.getElementById('entrada').value;
+      const saida = document.getElementById('saida').value;
+      const erro = document.getElementById('erroData');
+      if (entrada && saida && saida < entrada) {
+        erro.textContent = 'A data de saída não pode ser anterior à entrada.';
+      } else {
+        erro.textContent = '';
+      }
+    }
+  </script>
+<script>
+  let usuarioAtual = JSON.parse(localStorage.getItem('usuarioLogado')) || null;
+
+  let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [
+    { nome: 'admin', senha: 'admin', tipo: 'admin' }
+  ];
+  localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+  function carregarUsuario() {
+    if (usuarioAtual) {
+      document.getElementById('usuarioLogado').textContent = usuarioAtual.nome;
+      document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('cadastroIndividualCard').classList.add('hidden');
+      document.getElementById('registroCard').classList.remove('hidden');
+      if (usuarioAtual.tipo === 'admin') {
+        document.getElementById('relatorioCard').classList.remove('hidden');
+        document.getElementById('cadastroCard').classList.remove('hidden');
+        document.getElementById('refeicoesCard').classList.remove('hidden');
+      document.getElementById('gerenciarUsuariosCard').classList.remove('hidden');
+carregarListaUsuarios();
+      }
+    }
+  }
+function carregarListaUsuarios() {
+  const lista = document.getElementById('listaUsuarios');
+  lista.innerHTML = '';
+
+  usuarios.forEach((u, index) => {
+    if (u.nome === usuarioAtual.nome) return; // Não permite excluir a si mesmo
+
+    const li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    li.innerHTML = `
+      <span>${u.nome} (${u.tipo})</span>
+      <button class="btn btn-sm btn-danger" onclick="excluirUsuario(${index})">Excluir</button>
+    `;
+    lista.appendChild(li);
+  });
+}
+function excluirUsuario(index) {
+  if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+
+  usuarios.splice(index, 1);
+  localStorage.setItem('usuarios', JSON.stringify(usuarios));
+  carregarListaUsuarios();
+}
+  function logout() {
+    localStorage.removeItem('usuarioLogado');
+    location.reload();
+  }
+
+  function mostrarAlterarSenha() {
+    document.getElementById('alterarSenhaCard').classList.remove('hidden');
+  }
+
+  // Login
+  document.getElementById('formLogin').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const nome = document.getElementById('loginUsuario').value;
+  const senha = document.getElementById('loginSenha').value;
+  
+  const usuario = usuarios.find(u => u.nome === nome && u.senha === senha);
+  
+  if (!usuario) {
+    alert('Usuário ou senha inválidos');
+    return;
+  }
+
+  usuarioAtual = usuario;
+  localStorage.setItem('usuarioLogado', JSON.stringify(usuarioAtual));
+  location.reload();
+});
+
+  // Cadastro individual
+  document.getElementById('formCadastroIndividual').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const nome = document.getElementById('nomeCadastroIndividual').value;
+  const senha = document.getElementById('senhaCadastroIndividual').value;
+
+  if (usuarios.find(u => u.nome === nome)) {
+    alert('Usuário já existe!');
+    return;
+  }
+
+  usuarios.push({ nome, senha, tipo: 'usuario' });
+  localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+  alert('Usuário cadastrado! Faça login.');
+  document.getElementById('formCadastroIndividual').reset();
+  document.getElementById('cadastroIndividualCard').classList.add('hidden');
+  document.getElementById('loginCard').classList.remove('hidden');
+});
+
+  // Botões para alternar entre login e cadastro
+  document.getElementById('btnMostrarCadastro').addEventListener('click', function() {
+    document.getElementById('loginCard').classList.add('hidden');
+    document.getElementById('cadastroIndividualCard').classList.remove('hidden');
+  });
+
+  document.getElementById('btnVoltarLogin').addEventListener('click', function() {
+    document.getElementById('cadastroIndividualCard').classList.add('hidden');
+    document.getElementById('loginCard').classList.remove('hidden');
+  });
+
+  // Alterar senha
+  document.getElementById('formAlterarSenha').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const senhaAtual = document.getElementById('senhaAtual').value;
+    const novaSenha = document.getElementById('novaSenha').value;
+    if (senhaAtual !== usuarioAtual.senha) return alert('Senha atual incorreta');
+    const index = usuarios.findIndex(u => u.nome === usuarioAtual.nome);
+    usuarios[index].senha = novaSenha;
+    usuarioAtual.senha = novaSenha;
+    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+    localStorage.setItem('usuarioLogado', JSON.stringify(usuarioAtual));
+    alert('Senha alterada com sucesso.');
+    document.getElementById('formAlterarSenha').reset();
+    document.getElementById('alterarSenhaCard').classList.add('hidden');
+  });
+
+  carregarUsuario();
+</script>
+<script>
+  function mostrarCampoDepartamento() {
+    const uso = document.getElementById('usoCarro').value;
+    const campo = document.getElementById('campoDepartamento');
+    if (uso === 'departamento') {
+      campo.innerHTML = `
+        <label>Departamento:</label>
+        <input type="text" class="form-control mb-2" id="departamento">
+      `;
+    } else {
+      campo.innerHTML = '';
+    }
+  }
+</script>
+<script>
+  function gerarRelatorio() {
+  const registros = JSON.parse(localStorage.getItem('registros') || '[]');
+
+  const dataInicial = document.getElementById('dataInicial').value;
+  const dataFinal = document.getElementById('dataFinal').value;
+
+  let inicio = dataInicial ? new Date(dataInicial) : null;
+  let fim = dataFinal ? new Date(dataFinal) : null;
+
+  const filtrados = registros.filter(reg => {
+    const data = new Date(reg.data || reg.entrada); // usa reg.entrada em caso de hospedagem
+    if (inicio && data < inicio) return false;
+    if (fim && data > fim) return false;
+    return true;
+  });
+
+  if (filtrados.length === 0) {
+    document.getElementById('relatorio').textContent = 'Nenhum registro encontrado no período selecionado.';
+    return;
+  }
+
+  const resumo = {};
+  filtrados.forEach(reg => {
+    const nome = reg.usuario;
+    if (!resumo[nome]) {
+      resumo[nome] = {
+        lavanderia: 0,
+        carroPessoal: 0,
+        carroDepartamento: {},
+        carroTag: 0,
+        carroTagPorDepartamento: {},
+        xerox: 0,
+        refeicoes: 0,
+        hospedagemDias: 0
+      };
+    }
+
+    switch (reg.tipo) {
+      case 'lavanderia':
+        resumo[nome].lavanderia += parseInt(reg.qtdLavagens || 0);
+        break;
+      case 'carro':
+        const qtdTag = parseInt(reg.qtdTag || 0);
+        if (reg.uso === 'departamento') {
+          const depto = reg.departamento || 'Não especificado';
+          if (!resumo[nome].carroDepartamento[depto]) resumo[nome].carroDepartamento[depto] = 0;
+          resumo[nome].carroDepartamento[depto] += parseInt(reg.km || 0);
+          if (!resumo[nome].carroTagPorDepartamento[depto]) resumo[nome].carroTagPorDepartamento[depto] = 0;
+          resumo[nome].carroTagPorDepartamento[depto] += qtdTag;
+       }  else {
+          resumo[nome].carroPessoal += parseInt(reg.km || 0);
+          resumo[nome].carroTag += qtdTag;
+        }
+        break;
+      case 'xerox':
+        resumo[nome].xerox += parseInt(reg.qtd || 0);
+        break;
+      case 'refeicoes':
+        reg.dias?.forEach(dia => {
+          const data = new Date(dia.data);
+          if ((inicio && data < inicio) || (fim && data > fim)) return;
+          resumo[nome].refeicoes += parseInt(dia.qtd || 0);
+        });
+        break;
+      case 'hospedagem':
+        const entrada = new Date(reg.entrada);
+        const saida = new Date(reg.saida);
+        if ((inicio && saida < inicio) || (fim && entrada > fim)) return;
+        const dias = Math.ceil((saida - entrada) / (1000 * 60 * 60 * 24));
+        if (dias > 0) resumo[nome].hospedagemDias += dias;
+        break;
+    }
+  });
+
+  let texto = '';
+  for (let nome in resumo) {
+    texto += `Usuário: ${nome}\n`;
+    texto += `- Lavanderia: ${resumo[nome].lavanderia} lavagens\n`;
+    texto += `- Uso da TAG: ${resumo[nome].carroTag} usos\n`;
+    const tagsDepto = resumo[nome].carroTagPorDepartamento;
+    if (Object.keys(tagsDepto).length > 0) {
+      texto += `- TAG por departamento:\n`;
+      for (let depto in tagsDepto) {
+        texto += `    • ${depto}: ${tagsDepto[depto]} usos\n`;
+      }
+    }
+    texto += `- Carro (uso pessoal): ${resumo[nome].carroPessoal} km\n`;
+    texto += `- Carro (por departamento):\n`;
+    for (let depto in resumo[nome].carroDepartamento) {
+      texto += `    • ${depto}: ${resumo[nome].carroDepartamento[depto]} km\n`;
+    }
+    texto += `- Xerox: ${resumo[nome].xerox} cópias\n`;
+    texto += `- Refeições: ${resumo[nome].refeicoes} refeições\n`;
+    texto += `- Hospedagem: ${resumo[nome].hospedagemDias} dias\n\n`;
+  }
+  document.getElementById('relatorio').textContent = texto;
+}
+document.getElementById('formUso').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const tipo = document.getElementById('tipoServico').value;
+  if (!tipo) return alert('Selecione um tipo de serviço.');
+
+  const usuario = usuarioAtual.nome;
+  const registros = JSON.parse(localStorage.getItem('registros') || '[]');
+  const hoje = new Date().toISOString().split('T')[0];
+  const registro = { tipo, usuario, data: hoje };
+
+  // Validação e preenchimento por tipo
+  if (tipo === 'lavanderia') {
+    const lavagens = document.getElementById('qtdLavagens').value;
+    const secagens = document.getElementById('qtdSecagens').value;
+    if (!lavagens || !secagens) return alert('Preencha a quantidade de lavagens e secagens.');
+    registro.qtdLavagens = parseInt(lavagens);
+    registro.qtdSecagens = parseInt(secagens);
+    registro.data = document.getElementById('dataLavanderia').value;
+  } else if (tipo === 'carro') {
+    const km = document.getElementById('kmRodado').value;
+    const qtdTag = document.getElementById('qtdTag').value;
+    if (!km) return alert('Informe os km rodados.');
+    registro.km = parseInt(km);
+    registro.qtdTag = parseInt(qtdTag) || 0;
+    registro.uso = document.getElementById('usoCarro').value;
+    registro.data = document.getElementById('dataCarro').value;
+    if (registro.uso === 'departamento') {
+      const departamento = document.getElementById('departamento').value;
+      if (!departamento) return alert('Informe o nome do departamento.');
+      registro.departamento = departamento;
+    }
+  } else if (tipo === 'xerox') {
+    const qtd = document.getElementById('qtdXerox').value;
+    if (!qtd) return alert('Informe a quantidade de cópias.');
+    registro.qtd = parseInt(qtd);
+    registro.data = document.getElementById('dataXerox').value;
+  } else if (tipo === 'refeicoes') {
+    const dias = [];
+    let erro = false;
+    document.querySelectorAll('.linha-dia').forEach(el => {
+      const data = el.querySelector('.data-refeicao').value;
+      const qtd = el.querySelector('.qtd-refeicao').value;
+      if (!data || !qtd) erro = true;
+      dias.push({ data, qtd: parseInt(qtd) });
+    });
+    if (erro || dias.length === 0) return alert('Preencha todos os dias e quantidades de refeições.');
+    registro.dias = dias;
+  } else if (tipo === 'hospedagem') {
+    const entrada = document.getElementById('entrada').value;
+    const saida = document.getElementById('saida').value;
+    if (!entrada || !saida) return alert('Preencha as datas de entrada e saída.');
+    if (saida < entrada) return alert('A data de saída não pode ser anterior à entrada.');
+    registro.entrada = entrada;
+    registro.saida = saida;
+  }
+
+  // ✅ Confirmação antes de registrar
+  if (!confirm('Deseja registrar este uso de serviço?')) return;
+
+  registros.push(registro);
+  localStorage.setItem('registros', JSON.stringify(registros));
+
+  alert('Registro salvo com sucesso!');
+  document.getElementById('formUso').reset();
+  document.getElementById('detalhesServico').innerHTML = '';
+});
+function gerarRelatorioRefeicoesPeriodo() {
+  const registros = JSON.parse(localStorage.getItem('registros') || '[]');
+
+  if (registros.length === 0) {
+    alert('Nenhum registro de refeições encontrado.');
+    return;
+  }
+
+  const dataInicial = document.getElementById('dataRefInicio').value;
+  const dataFinal = document.getElementById('dataRefFim').value;
+
+  if (!dataInicial || !dataFinal) {
+    alert('Selecione um período válido.');
+    return;
+  }
+
+  const inicio = new Date(dataInicial);
+  const fim = new Date(dataFinal);
+  fim.setHours(23, 59, 59, 999); // incluir o último dia inteiro
+
+  const resumo = {};
+
+  registros.forEach(reg => {
+    if (reg.tipo === 'refeicoes' && Array.isArray(reg.dias)) {
+      reg.dias.forEach(dia => {
+        const data = new Date(dia.data);
+        if (data >= inicio && data <= fim) {
+          const diaStr = data.toISOString().split('T')[0];
+          if (!resumo[diaStr]) resumo[diaStr] = 0;
+          resumo[diaStr] += parseInt(dia.qtd || 0);
+        }
+      });
+    }
+  });
+
+  const formatarData = str => {
+  const [ano, mes, dia] = str.split('-');
+  return `${dia}/${mes}/${ano}`;
+};
+let texto = `🗓️ Refeições agendadas por dia (${formatarData(dataInicial)} a ${formatarData(dataFinal)}):\n\n`;
+  if (Object.keys(resumo).length === 0) {
+    texto += 'Nenhum agendamento encontrado.';
+  } else {
+    const diasOrdenados = Object.keys(resumo).sort();
+    diasOrdenados.forEach(dia => {
+      const [ano, mes, diaNum] = dia.split('-');
+texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
+    });
+  }
+
+  document.getElementById('relatorioRefeicoesPeriodo').textContent = texto;
+
+  const link = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  const whatsappBtn = document.getElementById('whatsappLinkRefeicoes');
+  whatsappBtn.href = link;
+  whatsappBtn.style.display = 'inline-block';
+}
+</script>
+<script>
+  document.getElementById('toggleLoginSenha').addEventListener('click', function () {
+    const input = document.getElementById('loginSenha');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    this.textContent = input.type === 'password' ? '👁️' : '🙈';
+  });
+
+  document.getElementById('toggleCadastroSenha').addEventListener('click', function () {
+    const input = document.getElementById('senhaCadastroIndividual');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    this.textContent = input.type === 'password' ? '👁️' : '🙈';
+  });
+</script>
+<script>
+  document.getElementById('formMissionario').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nome = document.getElementById('nomeMissionario').value;
+    const senha = document.getElementById('senhaMissionario').value;
+    const tipo = document.getElementById('tipoUsuario').value;
+
+    if (usuarios.find(u => u.nome === nome)) {
+      alert('Usuário já existe!');
+      return;
+    }
+
+    usuarios.push({ nome, senha, tipo });
+    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+    alert(`Usuário "${nome}" cadastrado como "${tipo}" com sucesso.`);
+
+    document.getElementById('formMissionario').reset();
+    carregarListaUsuarios();
+  });
+</script>
+<script type="module" src="supabase-adapter.js"></script>
+<script type="module" src="registro-servicos.js"></script>
+</body>
+</html>
