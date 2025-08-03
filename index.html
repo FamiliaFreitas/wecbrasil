@@ -5,14 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registro de Serviços - WEC Brasil</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     .hidden { display: none; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const { createClient } = supabase;
-    const supabaseClient = createClient('https://xqwubmknwvvonjzaecmk.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxd3VibWtud3Z2b25qemFlY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwODY2OTQsImV4cCI6MjA2OTY2MjY5NH0._42N0mZO4NcLPcCG9YMB0_hkMTLF5tCdlPZYagN3vIk'); // substitua com sua chave
-  </script>
 </head>
 <body class="p-4">
   <div class="container">
@@ -25,8 +23,8 @@
         <form id="formLogin">
           <input type="text" class="form-control mb-2" id="loginUsuario" placeholder="Email" required>
           <div class="input-group mb-2">
-             <input type="password" class="form-control" id="loginSenha" placeholder="Senha" required>
-             <button type="button" class="btn btn-outline-secondary" id="toggleLoginSenha">👁️</button>
+            <input type="password" class="form-control" id="loginSenha" placeholder="Senha" required>
+            <button type="button" class="btn btn-outline-secondary" id="toggleLoginSenha">👁️</button>
           </div>
           <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
@@ -37,64 +35,51 @@
       </div>
     </div>
 
-    <!-- Cadastro -->
+    <!-- Cadastro individual -->
     <div class="card mb-4 hidden" id="cadastroIndividualCard">
       <div class="card-header">Cadastro de Novo Usuário</div>
       <div class="card-body">
         <form id="formCadastroIndividual">
           <input type="email" class="form-control mb-2" id="nomeCadastroIndividual" placeholder="Email" required>
           <div class="input-group mb-2">
-             <input type="password" class="form-control" id="senhaCadastroIndividual" placeholder="Senha" required>
-             <button type="button" class="btn btn-outline-secondary" id="toggleCadastroSenha">👁️</button>
+            <input type="password" class="form-control" id="senhaCadastroIndividual" placeholder="Senha" required>
+            <button type="button" class="btn btn-outline-secondary" id="toggleCadastroSenha">👁️</button>
           </div>
+          <select class="form-select mb-2" id="tipoCadastroIndividual">
+            <option value="comum">Usuário Comum</option>
+            <option value="admin">Administrador</option>
+          </select>
           <button type="submit" class="btn btn-success">Cadastrar</button>
           <button type="button" class="btn btn-link" id="btnVoltarLogin">Voltar ao login</button>
         </form>
       </div>
     </div>
 
-    <!-- Área logada -->
+    <!-- Área principal -->
     <div class="card mb-4 hidden" id="registroCard">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Registro de Uso</span>
-        <div>
-          <span id="usuarioLogado"></span>
-          <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
-        </div>
+        <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
       </div>
       <div class="card-body">
-        <!-- Formulários de serviços -->
-        <div id="formulariosServicos">
-          <form data-servico="lavanderia" class="formServico mb-3">
-            <h5>Lavanderia</h5>
-            <input type="text" class="form-control mb-2" placeholder="Ex: 2 cestos de roupas">
-            <button class="btn btn-primary">Registrar</button>
-          </form>
+        <div class="mb-2"><strong>Usuário logado:</strong> <span id="usuarioLogado"></span></div>
 
-          <form data-servico="refeicao" class="formServico mb-3">
-            <h5>Refeição</h5>
-            <input type="text" class="form-control mb-2" placeholder="Ex: Almoço, 02/08">
-            <button class="btn btn-primary">Registrar</button>
-          </form>
-
-          <form data-servico="carro" class="formServico mb-3">
-            <h5>Carro</h5>
-            <input type="text" class="form-control mb-2" placeholder="Ex: Ida ao mercado">
-            <button class="btn btn-primary">Registrar</button>
-          </form>
-
-          <form data-servico="xerox" class="formServico mb-3">
-            <h5>Xerox</h5>
-            <input type="text" class="form-control mb-2" placeholder="Ex: 10 cópias A4">
-            <button class="btn btn-primary">Registrar</button>
-          </form>
-
-          <form data-servico="hospedagem" class="formServico mb-3">
-            <h5>Hospedagem</h5>
-            <input type="text" class="form-control mb-2" placeholder="Ex: 2 noites, casal">
-            <button class="btn btn-primary">Registrar</button>
-          </form>
+        <div class="mb-3">
+          <label for="selecaoServico" class="form-label">Selecione o serviço:</label>
+          <select id="selecaoServico" class="form-select mb-3">
+            <option value="lavanderia">Lavanderia</option>
+            <option value="refeicao">Refeição</option>
+            <option value="carro">Carro</option>
+            <option value="xerox">Xerox</option>
+            <option value="hospedagem">Hospedagem</option>
+          </select>
         </div>
+
+        <!-- Formulários dos serviços -->
+        <form id="formServico" class="mb-4">
+          <div id="camposServico"></div>
+          <button type="submit" class="btn btn-primary">Registrar Serviço</button>
+        </form>
 
         <!-- Histórico -->
         <h5>Histórico de Registros</h5>
@@ -103,135 +88,180 @@
     </div>
 
     <!-- Painel Admin -->
-    <div class="card mb-4 hidden" id="painelAdmin">
-      <div class="card-header">Painel do Administrador</div>
+    <div class="card mb-4 hidden" id="adminCard">
+      <div class="card-header">Administração</div>
       <div class="card-body">
-        <div class="mb-3">Todos os registros:</div>
-        <ul class="list-group" id="listaAdmin"></ul>
+        <button class="btn btn-success mb-2" onclick="gerarExcel()">📊 Baixar Excel</button>
+        <button class="btn btn-danger mb-2" onclick="gerarPDF()">📄 Baixar PDF</button>
+        <div id="relatorioAdmin"></div>
       </div>
     </div>
   </div>
 
-<script>
-let usuarioAtual = null;
+  <script>
+    const { createClient } = supabase;
+    const supabaseClient = createClient('https://xqwubmknwvvonjzaecmk.supabase.co', 'SEU_SUPABASE_KEY');
 
-async function verificarLogin() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  usuarioAtual = user;
-  if (usuarioAtual) {
-    document.getElementById('usuarioLogado').textContent = usuarioAtual.email;
-    document.getElementById('loginCard').classList.add('hidden');
-    document.getElementById('cadastroIndividualCard').classList.add('hidden');
-    document.getElementById('registroCard').classList.remove('hidden');
-    carregarRegistros();
+    let usuarioAtual = null;
+    let tipoUsuario = 'comum';
 
-    const { data: dadosUsuario } = await supabaseClient.from('usuarios').select('is_admin').eq('id', usuarioAtual.id).single();
-    if (dadosUsuario?.is_admin) {
-      document.getElementById('painelAdmin').classList.remove('hidden');
-      carregarRegistrosAdmin();
+    async function verificarLogin() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      usuarioAtual = user;
+      if (usuarioAtual) {
+        document.getElementById('usuarioLogado').textContent = usuarioAtual.email;
+        document.getElementById('loginCard').classList.add('hidden');
+        document.getElementById('cadastroIndividualCard').classList.add('hidden');
+        document.getElementById('registroCard').classList.remove('hidden');
+
+        const { data, error } = await supabaseClient.from('usuarios').select('tipo').eq('id', usuarioAtual.id).single();
+        tipoUsuario = data?.tipo || 'comum';
+
+        if (tipoUsuario === 'admin') {
+          document.getElementById('adminCard').classList.remove('hidden');
+        }
+
+        carregarRegistros();
+      }
     }
-  }
-}
 
-verificarLogin();
+    verificarLogin();
 
-document.querySelectorAll('.formServico').forEach(form => {
-  form.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const detalhes = this.querySelector('input').value;
-    const servico = this.dataset.servico;
-    const { error } = await supabaseClient.from('registros').insert({
-      usuario_id: usuarioAtual.id,
-      servico,
-      data: new Date().toISOString().split('T')[0],
-      detalhes: { descricao: detalhes }
+    // Eventos
+    document.getElementById('formLogin').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = loginUsuario.value;
+      const senha = loginSenha.value;
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+      if (error) return alert('Erro no login: ' + error.message);
+      location.reload();
     });
-    if (!error) {
-      this.querySelector('input').value = '';
+
+    document.getElementById('formCadastroIndividual').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = nomeCadastroIndividual.value;
+      const senha = senhaCadastroIndividual.value;
+      const tipo = tipoCadastroIndividual.value;
+
+      const { data, error } = await supabaseClient.auth.signUp({ email, password: senha });
+      if (error) return alert('Erro no cadastro: ' + error.message);
+
+      await supabaseClient.from('usuarios').insert({ id: data.user.id, email, tipo });
+
+      alert('Cadastro realizado com sucesso!');
+      formCadastroIndividual.reset();
+      cadastroIndividualCard.classList.add('hidden');
+      loginCard.classList.remove('hidden');
+    });
+
+    btnMostrarCadastro.onclick = () => {
+      loginCard.classList.add('hidden');
+      cadastroIndividualCard.classList.remove('hidden');
+    };
+
+    btnVoltarLogin.onclick = () => {
+      cadastroIndividualCard.classList.add('hidden');
+      loginCard.classList.remove('hidden');
+    };
+
+    toggleLoginSenha.onclick = () => {
+      loginSenha.type = loginSenha.type === 'password' ? 'text' : 'password';
+      toggleLoginSenha.textContent = loginSenha.type === 'password' ? '👁️' : '🙈';
+    };
+
+    toggleCadastroSenha.onclick = () => {
+      senhaCadastroIndividual.type = senhaCadastroIndividual.type === 'password' ? 'text' : 'password';
+      toggleCadastroSenha.textContent = senhaCadastroIndividual.type === 'password' ? '👁️' : '🙈';
+    };
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      location.reload();
+    }
+
+    // Formulário dinâmico
+    const campos = {
+      lavanderia: '<input type="text" class="form-control mb-2" name="descricao" placeholder="Ex: 2 cestos">',
+      refeicao: `
+        <select name="tipo" class="form-select mb-2">
+          <option>Café</option><option>Almoço</option><option>Jantar</option>
+        </select>
+        <input type="date" class="form-control mb-2" name="data">`,
+      carro: `
+        <input type="text" class="form-control mb-2" name="destino" placeholder="Destino">
+        <input type="time" class="form-control mb-2" name="horario">`,
+      xerox: '<input type="number" class="form-control mb-2" name="quantidade" placeholder="Quantidade">',
+      hospedagem: `
+        <input type="text" class="form-control mb-2" name="nome" placeholder="Nome do hóspede">
+        <input type="date" class="form-control mb-2" name="entrada">
+        <input type="date" class="form-control mb-2" name="saida">`
+    };
+
+    selecaoServico.addEventListener('change', () => {
+      camposServico.innerHTML = campos[selecaoServico.value];
+    });
+    selecaoServico.dispatchEvent(new Event('change'));
+
+    formServico.addEventListener('submit', async e => {
+      e.preventDefault();
+      const servico = selecaoServico.value;
+      const inputs = formServico.querySelectorAll('[name]');
+      const detalhes = {};
+      inputs.forEach(i => detalhes[i.name] = i.value);
+
+      const { error } = await supabaseClient.from('registros').insert({
+        usuario_id: usuarioAtual.id,
+        servico,
+        data: new Date().toISOString().split('T')[0],
+        detalhes
+      });
+
+      if (error) return alert('Erro ao registrar: ' + error.message);
+      formServico.reset();
       carregarRegistros();
-      if (document.getElementById('painelAdmin').classList.contains('hidden') === false) carregarRegistrosAdmin();
-    } else {
-      alert('Erro ao registrar: ' + error.message);
+    });
+
+    async function carregarRegistros() {
+      const { data, error } = await supabaseClient
+        .from('registros')
+        .select('*')
+        .eq('usuario_id', usuarioAtual.id)
+        .order('data', { ascending: false });
+
+      const lista = listaRegistros;
+      lista.innerHTML = '';
+      if (!data) return;
+
+      data.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.textContent = `${item.data} - ${item.servico}: ` + JSON.stringify(item.detalhes);
+        lista.appendChild(li);
+      });
     }
-  });
-});
 
-async function carregarRegistros() {
-  const { data, error } = await supabaseClient.from('registros').select('*').eq('usuario_id', usuarioAtual.id).order('data', { ascending: false });
-  const lista = document.getElementById('listaRegistros');
-  lista.innerHTML = '';
-  if (!error) {
-    data.forEach(item => {
-      const li = document.createElement('li');
-      li.className = 'list-group-item';
-      li.textContent = `${item.data} - ${item.servico}: ${item.detalhes?.descricao || ''}`;
-      lista.appendChild(li);
-    });
-  }
-}
+    function gerarExcel() {
+      supabaseClient.from('registros').select('*').then(({ data }) => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, "Relatorio");
+        XLSX.writeFile(wb, "relatorio_servicos.xlsx");
+      });
+    }
 
-async function carregarRegistrosAdmin() {
-  const { data, error } = await supabaseClient.from('registros').select('*, usuario_id').order('data', { ascending: false });
-  const lista = document.getElementById('listaAdmin');
-  lista.innerHTML = '';
-  if (!error) {
-    data.forEach(item => {
-      const li = document.createElement('li');
-      li.className = 'list-group-item';
-      li.textContent = `${item.data} - ${item.servico} - ${item.usuario_id}: ${item.detalhes?.descricao || ''}`;
-      lista.appendChild(li);
-    });
-  }
-}
-
-document.getElementById('formLogin').addEventListener('submit', async function (e) {
-  e.preventDefault();
-  const email = document.getElementById('loginUsuario').value;
-  const senha = document.getElementById('loginSenha').value;
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
-  if (error) return alert('Erro no login: ' + error.message);
-  location.reload();
-});
-
-document.getElementById('formCadastroIndividual').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const email = document.getElementById('nomeCadastroIndividual').value;
-  const senha = document.getElementById('senhaCadastroIndividual').value;
-  const { error } = await supabaseClient.auth.signUp({ email, password: senha });
-  if (error) return alert('Erro no cadastro: ' + error.message);
-  alert('Cadastro realizado! Verifique seu e-mail.');
-  this.reset();
-  document.getElementById('cadastroIndividualCard').classList.add('hidden');
-  document.getElementById('loginCard').classList.remove('hidden');
-});
-
-document.getElementById('btnMostrarCadastro').addEventListener('click', () => {
-  document.getElementById('loginCard').classList.add('hidden');
-  document.getElementById('cadastroIndividualCard').classList.remove('hidden');
-});
-
-document.getElementById('btnVoltarLogin').addEventListener('click', () => {
-  document.getElementById('cadastroIndividualCard').classList.add('hidden');
-  document.getElementById('loginCard').classList.remove('hidden');
-});
-
-async function logout() {
-  await supabaseClient.auth.signOut();
-  location.reload();
-}
-
-document.getElementById('toggleLoginSenha').addEventListener('click', function () {
-  const input = document.getElementById('loginSenha');
-  input.type = input.type === 'password' ? 'text' : 'password';
-  this.textContent = input.type === 'password' ? '👁️' : '🙈';
-});
-
-document.getElementById('toggleCadastroSenha').addEventListener('click', function () {
-  const input = document.getElementById('senhaCadastroIndividual');
-  input.type = input.type === 'password' ? 'text' : 'password';
-  this.textContent = input.type === 'password' ? '👁️' : '🙈';
-});
-</script>
+    function gerarPDF() {
+      supabaseClient.from('registros').select('*').then(({ data }) => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(12);
+        let y = 10;
+        data.forEach(r => {
+          doc.text(`${r.data} - ${r.servico}: ${JSON.stringify(r.detalhes)}`, 10, y);
+          y += 8;
+        });
+        doc.save("relatorio_servicos.pdf");
+      });
+    }
+  </script>
 </body>
 </html>
-
