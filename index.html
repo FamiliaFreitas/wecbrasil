@@ -970,24 +970,6 @@ function mostrarCamposServico() {
         };
       }
 
-    });
-  }
-
-    filtrados.forEach(reg => {
-      const nome = reg.usuario;
-      if (!resumo[nome]) {
-        resumo[nome] = {
-          lavanderia: 0,
-          carroPessoal: 0,
-          carroDepartamento: {},
-          carroTag: 0,
-          carroTagPorDepartamento: {},
-          xerox: 0,
-          refeicoes: 0,
-          hospedagemDias: 0
-        };
-      }
-
       switch (reg.tipo) {
         case 'lavanderia':
           resumo[nome].lavanderia += parseInt(reg.qtdLavagens || 0);
@@ -1026,7 +1008,7 @@ function mostrarCamposServico() {
           const dias = Math.ceil((saida - entrada) / (1000 * 60 * 60 * 24));
           if (dias > 0) resumo[nome].hospedagemDias += dias;
           break;
-      }
+       }
     });
 
     // Exibe o resumo na tela (pode adaptar esse trecho para tabela ou texto formatado)
@@ -1203,3 +1185,5 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
+
