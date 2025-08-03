@@ -8,22 +8,22 @@
   <style>
     .hidden { display: none; }
   </style>
-</head>
-<body class="p-4">
-  <div class="container">
-    <h1 class="mb-4">Registro de Serviços - WEC Brasil</h1>
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/supabase.min.js"></script>
 
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const { createClient } = supabase;
-    window.supabase = createClient(
+   const { createClient } = supabase;
+const supabaseClient = createClient(
       'https://xqwubmknwvvonjzaecmk.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxd3VibWtud3Z2b25qemFlY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwODY2OTQsImV4cCI6MjA2OTY2MjY5NH0._42N0mZO4NcLPcCG9YMB0_hkMTLF5tCdlPZYagN3vIk'
     );
-  });
+    window.supabaseClient = supabaseClient;
   </script>
+</head>
+<body class="p-4">
+  <div class="container">
+    <h1 class="mb-4">Registro de Serviços - WEC Brasil</h1>
+
     <!-- Login -->
     <div class="card mb-4" id="loginCard">
       <div class="card-header">Login</div>
@@ -41,12 +41,6 @@
     </div>
 
     <script>
-      // Alternar visibilidade da senha
-      document.getElementById("toggleLoginSenha").addEventListener("click", () => {
-        const senhaInput = document.getElementById("loginSenha");
-        senhaInput.type = senhaInput.type === "password" ? "text" : "password";
-      });
-
       // Login com Supabase
       document.getElementById("formLogin").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -54,7 +48,7 @@
   const email = document.getElementById("emailLogin").value.trim().toLowerCase();
   const senha = document.getElementById("senhaLogin").value;
 
-  const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+  const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
     email,
     password: senha
   });
@@ -70,10 +64,10 @@
     return;
   }
 
-  const { data: perfil, error: perfilError } = await supabase
+  const { data: perfil, error: perfilError } = await supabaseClient
     .from("usuarios")
     .select("*")
-    .eq("id_auth", user.id)
+    .eq("auth_user_id", user.id)
     .single();
 
   if (perfilError || !perfil) {
@@ -84,9 +78,9 @@
   window.usuarioAtual = perfil;
   alert(`Bem-vindo, ${perfil.nome}!`);
 
-  // Aqui você pode mostrar o painel, ocultar tela de login etc.
 });
     </script>
+
 <!-- Cadastro individual -->
 <div class="card mb-4 hidden" id="cadastroIndividualCard">
   <div class="card-header">Cadastro de Novo Usuário</div>
@@ -110,7 +104,9 @@
   <div class="card-body">
     <form id="formMissionario">
       <input type="text" class="form-control mb-2" id="nomeMissionario" placeholder="Nome do usuário" required>
+      <input type="email" class="form-control mb-2" id="emailMissionario" placeholder="Email do usuário" required>
       <input type="password" class="form-control mb-2" id="senhaMissionario" placeholder="Senha" required>
+
       <select class="form-select mb-2" id="tipoUsuario">
         <option value="usuario">Usuário</option>
         <option value="admin">Administrador</option>
@@ -150,9 +146,9 @@
   e.preventDefault();
 
   const nome = document.getElementById('nomeMissionario').value.trim();
+  const email = document.getElementById('emailMissionario').value.trim().toLowerCase();
   const senha = document.getElementById('senhaMissionario').value;
   const tipo = document.getElementById('tipoUsuario').value;
-  const email = `${nome.toLowerCase().replace(/\s+/g, '')}@wecbrasil.org`;
 
   const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
     email,
@@ -172,7 +168,7 @@
 
   const { error: insertError } = await supabaseClient
     .from('usuarios')
-    .insert([{ id_auth: user.id, email: email, nome: nome, tipo: tipo }]);
+    .insert([{ auth_user_id: user.id, email: email, nome: nome, admin: tipo === 'admin' }]);
 
   if (insertError) {
     alert('Erro ao salvar na tabela usuarios: ' + insertError.message);
@@ -198,6 +194,7 @@
     }
   });
 </script>
+
 <!-- Registro de uso de serviços -->
 <div class="card mb-4 hidden" id="registroCard">
   <div class="card-header d-flex justify-content-between align-items-center">
@@ -235,7 +232,7 @@
       const { data: perfil } = await supabaseClient
         .from("usuarios")
         .select("nome")
-        .eq("email", usuarioAtual.email)
+        .eq("auth_user_id", usuarioAtual.id)
         .single();
 
       document.getElementById("usuarioLogado").textContent = perfil?.nome || usuarioAtual.email;
@@ -261,7 +258,11 @@
       case "lavanderia":
         container.innerHTML = `
           <label>Quantidade de lavagens:</label>
-          <input type="number" class="form-control" id="qtdLavagens" required>
+          <input type="number" class="form-control mb-2" id="qtdLavagens" required>
+          <label>Quantidade de secagens:</label>
+          <input type="number" class="form-control mb-2" id="qtdSecagens">
+          <label>Data:</label>
+          <input type="date" class="form-control" id="dataLavanderia" value="${new Date().toISOString().split("T")[0]}">
         `;
         break;
       case "carro":
@@ -298,6 +299,7 @@
         break;
     }
   }
+  </script>
 
   <script>
 document.getElementById("formUso").addEventListener("submit", async (e) => {
@@ -313,8 +315,8 @@ document.getElementById("formUso").addEventListener("submit", async (e) => {
       campos.qtdSecagens = parseInt(document.getElementById("qtdSecagens")?.value || 0);
       campos.data = document.getElementById("dataLavanderia")?.value || new Date().toISOString().split("T")[0];
 
-      if (!campos.qtdLavagens || !campos.qtdSecagens) {
-        alert("Informe a quantidade de lavagens e secagens.");
+      if (!campos.qtdLavagens && campos.qtdLavagens !== 0) {
+        alert("Informe a quantidade de lavagens.");
         valido = false;
       }
       break;
@@ -391,13 +393,13 @@ document.getElementById("formUso").addEventListener("submit", async (e) => {
       valido = false;
   }
 
-  if (!valido || !usuarioAtual) {
-    alert("Erro ao registrar uso. Verifique os campos.");
-    return;
-  }
+  if (!valido || !usuarioAtual || !usuarioAtual.email) {
+  alert("Erro ao registrar uso. Verifique os campos.");
+  return;
+}
 
   const { error } = await supabaseClient.from("registros").insert([{
-    email_usuario: usuarioAtual.email,
+   auth_user_id: usuarioAtual.id,
     tipo_servico: tipo,
     dados: campos,
     data_registro: new Date().toISOString()
@@ -408,14 +410,15 @@ document.getElementById("formUso").addEventListener("submit", async (e) => {
   } else {
     alert("Serviço registrado com sucesso!");
     document.getElementById("formUso").reset();
-    document.getElementById("camposServico").innerHTML = "";
+    document.getElementById("detalhesServico").innerHTML = "";
+    document.getElementById("tipoServico").value = "";
   }
 });
-</script>
 
   // Chamar após login
   carregarUsuarioLogado();
 </script>
+
 <!-- Área para relatórios (somente admin) -->
 <div class="card hidden" id="relatorioCard">
   <div class="card-header">Relatório Atual</div>
@@ -581,6 +584,8 @@ document.getElementById("formUso").addEventListener("submit", async (e) => {
     }
   }
 </script>
+
+<script>
 function mostrarCamposServico() {
   const tipo = document.getElementById('tipoServico').value;
   const detalhes = document.getElementById('detalhesServico');
@@ -664,6 +669,7 @@ function mostrarCamposServico() {
       }
     }
   </script>
+
 <script type="module">
   import { supabaseClient } from './supabaseClient.js'; // ajuste o caminho se necessário
 
@@ -707,6 +713,7 @@ function mostrarCamposServico() {
 
   carregarUsuario();
 </script>
+
 <script type="module">
   import { supabaseClient } from './supabaseClient.js'; // ajuste o caminho se necessário
 
@@ -760,6 +767,7 @@ function mostrarCamposServico() {
     document.getElementById('alterarSenhaCard').classList.remove('hidden');
   }
 </script>
+
 <script type="module">
   import { supabaseClient } from './supabaseClient.js'; // ajuste o caminho conforme necessário
 
@@ -801,6 +809,7 @@ function mostrarCamposServico() {
     carregarUsuario(); // chama a função de interface (já atualizada antes)
   });
 </script>
+
 <script type="module">
   import { supabaseClient } from './supabaseClient.js';
 
@@ -812,7 +821,7 @@ function mostrarCamposServico() {
   const email = document.getElementById("emailCadastroIndividual").value.trim().toLowerCase();
   const senha = document.getElementById("senhaCadastroIndividual").value;
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  const { data: authData, error: authError } = await supabaseClient.auth.signUp({
     email,
     password: senha
   });
@@ -828,7 +837,7 @@ function mostrarCamposServico() {
     return;
   }
 
-  const { error: dbError } = await supabase.from("usuarios").insert([{
+  const { error: dbError } = await supabaseClient.from("usuarios").insert([{
     id_auth: user.id,
     nome,
     email,
@@ -899,6 +908,7 @@ function mostrarCamposServico() {
 
   carregarUsuario(); // já assumindo função atualizada anteriormente
 </script>
+
 <script>
   function mostrarCampoDepartamento() {
     const uso = document.getElementById('usoCarro').value;
@@ -913,6 +923,7 @@ function mostrarCamposServico() {
     }
   }
 </script>
+
 <script>
   async function gerarRelatorio() {
     const { data: registros, error } = await supabaseClient
@@ -959,10 +970,9 @@ function mostrarCamposServico() {
         };
       }
 
-      // O restante da lógica do resumo continua no próximo trecho
     });
   }
-</script>
+
     filtrados.forEach(reg => {
       const nome = reg.usuario;
       if (!resumo[nome]) {
@@ -1038,6 +1048,7 @@ function mostrarCamposServico() {
     document.getElementById('relatorio').innerHTML = html;
   }
 </script>
+
 <script>
 document.getElementById('formUso').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -1135,6 +1146,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
   whatsappBtn.style.display = 'inline-block';
 }
 </script>
+
 <script>
   function baixarRelatorioPDF() {
     const texto = document.getElementById('relatorio').textContent;
@@ -1166,6 +1178,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
     document.body.removeChild(link);
   }
 </script>
+
 <script>
   // Gera data de hoje no formato yyyy-mm-dd (HTML) e aplica em todos os campos de data
   const hoje = new Date();
@@ -1190,5 +1203,3 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
-
-
