@@ -28,14 +28,10 @@
           </div>
           <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
-        <div class="mt-3">
-          <span>Não tem conta?</span>
-          <button class="btn btn-link p-0" id="btnMostrarCadastro">Cadastre-se</button>
-        </div>
       </div>
     </div>
 
-    <!-- Cadastro individual -->
+    <!-- Cadastro de novos usuários (somente admin vê) -->
     <div class="card mb-4 hidden" id="cadastroIndividualCard">
       <div class="card-header">Cadastro de Novo Usuário</div>
       <div class="card-body">
@@ -50,7 +46,6 @@
             <option value="admin">Administrador</option>
           </select>
           <button type="submit" class="btn btn-success">Cadastrar</button>
-          <button type="button" class="btn btn-link" id="btnVoltarLogin">Voltar ao login</button>
         </form>
       </div>
     </div>
@@ -59,7 +54,10 @@
     <div class="card mb-4 hidden" id="registroCard">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Registro de Uso</span>
-        <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+        <div>
+          <button class="btn btn-outline-secondary btn-sm me-2 hidden" id="btnAdminPanel">Admin</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+        </div>
       </div>
       <div class="card-body">
         <div class="mb-2"><strong>Usuário logado:</strong> <span id="usuarioLogado"></span></div>
@@ -75,13 +73,11 @@
           </select>
         </div>
 
-        <!-- Formulários dos serviços -->
         <form id="formServico" class="mb-4">
           <div id="camposServico"></div>
           <button type="submit" class="btn btn-primary">Registrar Serviço</button>
         </form>
 
-        <!-- Histórico -->
         <h5>Histórico de Registros</h5>
         <ul class="list-group" id="listaRegistros"></ul>
       </div>
@@ -93,6 +89,7 @@
       <div class="card-body">
         <button class="btn btn-success mb-2" onclick="gerarExcel()">📊 Baixar Excel</button>
         <button class="btn btn-danger mb-2" onclick="gerarPDF()">📄 Baixar PDF</button>
+        <button class="btn btn-primary mb-3" onclick="mostrarCadastroAdmin()">+ Novo Usuário</button>
         <div id="relatorioAdmin"></div>
       </div>
     </div>
@@ -100,7 +97,7 @@
 
   <script>
     const { createClient } = supabase;
-    const supabaseClient = createClient('https://xqwubmknwvvonjzaecmk.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxd3VibWtud3Z2b25qemFlY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwODY2OTQsImV4cCI6MjA2OTY2MjY5NH0._42N0mZO4NcLPcCG9YMB0_hkMTLF5tCdlPZYagN3vIk');
+    const supabaseClient = createClient('https://xqwubmknwvvonjzaecmk.supabase.co', 'public-anon-key');
 
     let usuarioAtual = null;
     let tipoUsuario = 'comum';
@@ -110,24 +107,21 @@
       usuarioAtual = user;
       if (usuarioAtual) {
         document.getElementById('usuarioLogado').textContent = usuarioAtual.email;
-        document.getElementById('loginCard').classList.add('hidden');
-        document.getElementById('cadastroIndividualCard').classList.add('hidden');
-        document.getElementById('registroCard').classList.remove('hidden');
+        loginCard.classList.add('hidden');
+        registroCard.classList.remove('hidden');
 
         const { data, error } = await supabaseClient.from('usuarios').select('tipo').eq('id', usuarioAtual.id).single();
         tipoUsuario = data?.tipo || 'comum';
 
         if (tipoUsuario === 'admin') {
-          document.getElementById('adminCard').classList.remove('hidden');
+          adminCard.classList.remove('hidden');
+          btnAdminPanel.classList.remove('hidden');
         }
-
         carregarRegistros();
       }
     }
-
     verificarLogin();
 
-    // Eventos
     document.getElementById('formLogin').addEventListener('submit', async e => {
       e.preventDefault();
       const email = loginUsuario.value;
@@ -139,6 +133,8 @@
 
     document.getElementById('formCadastroIndividual').addEventListener('submit', async e => {
       e.preventDefault();
+      if (tipoUsuario !== 'admin') return alert('Apenas administradores podem cadastrar usuários.');
+
       const email = nomeCadastroIndividual.value;
       const senha = senhaCadastroIndividual.value;
       const tipo = tipoCadastroIndividual.value;
@@ -147,22 +143,14 @@
       if (error) return alert('Erro no cadastro: ' + error.message);
 
       await supabaseClient.from('usuarios').insert({ id: data.user.id, email, tipo });
-
-      alert('Cadastro realizado com sucesso!');
+      alert('Usuário cadastrado com sucesso!');
       formCadastroIndividual.reset();
       cadastroIndividualCard.classList.add('hidden');
-      loginCard.classList.remove('hidden');
     });
 
-    btnMostrarCadastro.onclick = () => {
-      loginCard.classList.add('hidden');
+    function mostrarCadastroAdmin() {
       cadastroIndividualCard.classList.remove('hidden');
-    };
-
-    btnVoltarLogin.onclick = () => {
-      cadastroIndividualCard.classList.add('hidden');
-      loginCard.classList.remove('hidden');
-    };
+    }
 
     toggleLoginSenha.onclick = () => {
       loginSenha.type = loginSenha.type === 'password' ? 'text' : 'password';
@@ -179,22 +167,12 @@
       location.reload();
     }
 
-    // Formulário dinâmico
     const campos = {
       lavanderia: '<input type="text" class="form-control mb-2" name="descricao" placeholder="Ex: 2 cestos">',
-      refeicao: `
-        <select name="tipo" class="form-select mb-2">
-          <option>Café</option><option>Almoço</option><option>Jantar</option>
-        </select>
-        <input type="date" class="form-control mb-2" name="data">`,
-      carro: `
-        <input type="text" class="form-control mb-2" name="destino" placeholder="Destino">
-        <input type="time" class="form-control mb-2" name="horario">`,
+      refeicao: '<select name="tipo" class="form-select mb-2"><option>Café</option><option>Almoço</option><option>Jantar</option></select><input type="date" class="form-control mb-2" name="data">',
+      carro: '<input type="text" class="form-control mb-2" name="destino" placeholder="Destino"><input type="time" class="form-control mb-2" name="horario">',
       xerox: '<input type="number" class="form-control mb-2" name="quantidade" placeholder="Quantidade">',
-      hospedagem: `
-        <input type="text" class="form-control mb-2" name="nome" placeholder="Nome do hóspede">
-        <input type="date" class="form-control mb-2" name="entrada">
-        <input type="date" class="form-control mb-2" name="saida">`
+      hospedagem: '<input type="text" class="form-control mb-2" name="nome" placeholder="Nome do hóspede"><input type="date" class="form-control mb-2" name="entrada"><input type="date" class="form-control mb-2" name="saida">'
     };
 
     selecaoServico.addEventListener('change', () => {
@@ -222,16 +200,10 @@
     });
 
     async function carregarRegistros() {
-      const { data, error } = await supabaseClient
-        .from('registros')
-        .select('*')
-        .eq('usuario_id', usuarioAtual.id)
-        .order('data', { ascending: false });
-
+      const { data, error } = await supabaseClient.from('registros').select('*').eq('usuario_id', usuarioAtual.id).order('data', { ascending: false });
       const lista = listaRegistros;
       lista.innerHTML = '';
       if (!data) return;
-
       data.forEach(item => {
         const li = document.createElement('li');
         li.className = 'list-group-item';
@@ -244,8 +216,8 @@
       supabaseClient.from('registros').select('*').then(({ data }) => {
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.json_to_sheet(data);
-        XLSX.utils.book_append_sheet(wb, ws, "Relatorio");
-        XLSX.writeFile(wb, "relatorio_servicos.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+        XLSX.writeFile(wb, 'relatorio_servicos.xlsx');
       });
     }
 
@@ -259,10 +231,9 @@
           doc.text(`${r.data} - ${r.servico}: ${JSON.stringify(r.detalhes)}`, 10, y);
           y += 8;
         });
-        doc.save("relatorio_servicos.pdf");
+        doc.save('relatorio_servicos.pdf');
       });
     }
   </script>
 </body>
 </html>
-
