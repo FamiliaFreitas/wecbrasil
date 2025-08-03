@@ -224,31 +224,41 @@
   let usuarioAtual = null;
 
   async function carregarUsuarioLogado() {
-  const { data, error } = await supabaseClient.auth.getUser();
+    const { data, error } = await supabaseClient.auth.getUser();
 
-  if (error) {
-    console.warn('Usuário não logado ou sessão ausente:', error.message);
-    document.getElementById("usuarioLogado").textContent = "Não logado";
-    return;
+    if (error || !data?.user) {
+      console.warn('Usuário não logado ou sessão ausente:', error?.message);
+      document.getElementById("usuarioLogado").textContent = "Não logado";
+      return;
+    }
+
+    usuarioAtual = data.user;
+
+    const { data: perfil, error: erroPerfil } = await supabaseClient
+      .from("usuarios")
+      .select("nome, tipo")
+      .eq("auth_user_id", usuarioAtual.id)
+      .single();
+
+    if (erroPerfil || !perfil) {
+      console.warn("Perfil não encontrado ou erro:", erroPerfil?.message);
+      document.getElementById("usuarioLogado").textContent = usuarioAtual.email;
+      return;
+    }
+
+    document.getElementById("usuarioLogado").textContent = perfil.nome || usuarioAtual.email;
+
+    // Se for admin, mostra a área de administração
+    if (perfil.tipo === "admin") {
+      document.getElementById("areaAdmin").style.display = "block";
+      document.getElementById("botaoCadastro").style.display = "inline-block";
+    } else {
+      document.getElementById("areaAdmin").style.display = "none";
+      document.getElementById("botaoCadastro").style.display = "none";
+    }
   }
 
-  const user = data?.user;
-  if (!user) {
-    document.getElementById("usuarioLogado").textContent = "Não logado";
-    return;
-  }
-
-  usuarioAtual = user;
-
-  const { data: perfil, error: erroPerfil } = await supabaseClient
-    .from("usuarios")
-    .select("nome")
-    .eq("auth_user_id", usuarioAtual.id)
-    .single();
-
-  document.getElementById("usuarioLogado").textContent =
-    perfil?.nome || usuarioAtual.email;
-}
+  carregarUsuarioLogado();
 </script>
 <script>
   function mostrarAlterarSenha() {
@@ -959,6 +969,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
 
 
 
