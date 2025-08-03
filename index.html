@@ -224,36 +224,31 @@
   let usuarioAtual = null;
 
   async function carregarUsuarioLogado() {
-    const { data, error } = await supabaseClient.auth.getUser();
+  const { data, error } = await supabaseClient.auth.getUser();
 
-    if (error) {
-      console.error('Erro ao obter usuário:', error.message);
-      return;
-    }
-
-    const user = data?.user;
-    if (!user) {
-      console.log('Nenhum usuário logado.');
-      return;
-    }
-
-    usuarioAtual = user;
-
-    const { data: perfil, error: erroPerfil } = await supabaseClient
-      .from("usuarios")
-      .select("nome")
-      .eq("auth_user_id", usuarioAtual.id)
-      .single();
-
-    if (erroPerfil) {
-      console.warn("Erro ao buscar nome do usuário:", erroPerfil.message);
-    }
-
-    document.getElementById("usuarioLogado").textContent =
-      perfil?.nome || usuarioAtual.email;
+  if (error) {
+    console.warn('Usuário não logado ou sessão ausente:', error.message);
+    document.getElementById("usuarioLogado").textContent = "Não logado";
+    return;
   }
 
-  carregarUsuarioLogado();
+  const user = data?.user;
+  if (!user) {
+    document.getElementById("usuarioLogado").textContent = "Não logado";
+    return;
+  }
+
+  usuarioAtual = user;
+
+  const { data: perfil, error: erroPerfil } = await supabaseClient
+    .from("usuarios")
+    .select("nome")
+    .eq("auth_user_id", usuarioAtual.id)
+    .single();
+
+  document.getElementById("usuarioLogado").textContent =
+    perfil?.nome || usuarioAtual.email;
+}
 </script>
 <script>
   function mostrarAlterarSenha() {
@@ -964,6 +959,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
 
 
 
