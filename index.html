@@ -1016,8 +1016,91 @@ async function gerarRelatorioRefeicoesPeriodo() {
   const dataBr = new Intl.DateTimeFormat('pt-BR').format(hoje);
   console.log("Data brasileira:", dataBr); // Exemplo: 03/08/2025
 </script>
+<!-- Seu HTML anterior -->
+
+<!-- Coloque o script AQUI, antes do </body> -->
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    let usuarioAtual = null;
+
+    async function carregarUsuarioLogado() {
+      const { data, error } = await supabaseClient.auth.getUser();
+
+      if (error || !data?.user) {
+        console.warn('Usuário não logado ou sessão ausente:', error?.message);
+        document.getElementById("usuarioLogado").textContent = "Não logado";
+        return;
+      }
+
+      usuarioAtual = data.user;
+
+      const { data: perfil, error: erroPerfil } = await supabaseClient
+        .from("usuarios")
+        .select("nome, tipo")
+        .eq("auth_user_id", usuarioAtual.id)
+        .single();
+
+      if (erroPerfil || !perfil) {
+        console.warn("Perfil não encontrado ou erro:", erroPerfil?.message);
+        document.getElementById("usuarioLogado").textContent = usuarioAtual.email;
+        return;
+      }
+
+      document.getElementById("usuarioLogado").textContent = perfil.nome || usuarioAtual.email;
+
+      if (perfil.tipo === "admin") {
+        document.getElementById("areaAdmin").style.display = "block";
+        document.getElementById("botaoCadastro").style.display = "inline-block";
+      } else {
+        document.getElementById("areaAdmin").style.display = "none";
+        document.getElementById("botaoCadastro").style.display = "none";
+      }
+    }
+
+    carregarUsuarioLogado();
+
+    document.getElementById("botaoCadastro").addEventListener("click", async () => {
+      const email = prompt("Digite o e-mail do novo usuário:");
+      const senha = prompt("Digite a senha:");
+      const nome = prompt("Digite o nome completo:");
+      const tipo = prompt("Digite o tipo (admin ou usuario):", "usuario");
+
+      if (!email || !senha || !nome || !tipo) {
+        alert("Todos os campos são obrigatórios.");
+        return;
+      }
+
+      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+        email,
+        password: senha
+      });
+
+      if (authError) {
+        alert("Erro ao criar usuário: " + authError.message);
+        return;
+      }
+
+      const userId = authData.user.id;
+
+      const { error: insertError } = await supabaseClient.from("usuarios").insert([
+        {
+          auth_user_id: userId,
+          nome: nome,
+          tipo: tipo
+        }
+      ]);
+
+      if (insertError) {
+        alert("Usuário criado no Auth, mas erro ao salvar no banco: " + insertError.message);
+      } else {
+        alert("Usuário criado com sucesso!");
+      }
+    });
+  });
+</script>
 </body>
 </html>
+
 
 
 
