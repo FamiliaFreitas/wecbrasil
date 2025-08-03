@@ -5,10 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registro de Serviços - WEC Brasil</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     .hidden { display: none; }
   </style>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/supabase.min.js"></script>
+  <script>
+    const supabase = supabase.createClient(
+      'https://xqwubmknwvvonjzaecmk.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxd3VibWtud3Z2b25qemFlY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwODY2OTQsImV4cCI6MjA2OTY2MjY5NH0._42N0mZO4NcLPcCG9YMB0_hkMTLF5tCdlPZYagN3vIk'
+    );
+  </script>
 </head>
 <body class="p-4">
   <div class="container">
@@ -19,143 +27,1275 @@
       <div class="card-header">Login</div>
       <div class="card-body">
         <form id="formLogin">
-          <input type="email" class="form-control mb-2" id="loginEmail" placeholder="Email" required>
-          <input type="password" class="form-control mb-2" id="loginSenha" placeholder="Senha" required>
+          <input type="text" class="form-control mb-2" id="loginUsuario" placeholder="Usuário" required>
+          <div class="input-group mb-2">
+             <input type="password" class="form-control" id="loginSenha" placeholder="Senha" required>
+             <button type="button" class="btn btn-outline-secondary" id="toggleLoginSenha">👁️</button>
+          </div>
           <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
+        <div class="mt-3">
+          <span>Não tem conta?</span>
+          <button class="btn btn-link p-0" id="btnMostrarCadastro">Cadastre-se</button>
+        </div>
       </div>
     </div>
 
-    <!-- Área de Registro -->
-    <div class="card hidden" id="registroCard">
-      <div class="card-header d-flex justify-content-between">
-        <span>Registro de Serviços</span>
-        <button class="btn btn-sm btn-danger" onclick="logout()">Sair</button>
-      </div>
-      <div class="card-body">
-        <p><strong>Usuário logado:</strong> <span id="usuarioLogado"></span></p>
-        <label class="form-label">Serviço:</label>
-        <select class="form-select mb-3" id="selecaoServico">
-          <option value="lavanderia">Lavanderia</option>
-          <option value="refeicao">Refeição</option>
-          <option value="carro">Carro</option>
-          <option value="xerox">Xerox</option>
-          <option value="hospedagem">Hospedagem</option>
-        </select>
+    <script>
+      // Alternar visibilidade da senha
+      document.getElementById("toggleLoginSenha").addEventListener("click", () => {
+        const senhaInput = document.getElementById("loginSenha");
+        senhaInput.type = senhaInput.type === "password" ? "text" : "password";
+      });
 
-        <form id="formServico">
-          <div id="camposServico"></div>
-          <button type="submit" class="btn btn-success mt-2">Registrar</button>
-        </form>
+      // Login com Supabase
+      document.getElementById("formLogin").addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-        <hr>
-        <h5>Histórico de Registros</h5>
-        <ul class="list-group" id="listaRegistros"></ul>
+        const email = document.getElementById("loginUsuario").value.trim();
+        const senha = document.getElementById("loginSenha").value;
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: senha
+        });
+
+        if (error) {
+          alert("Erro ao fazer login: " + error.message);
+        } else {
+          alert("Login realizado com sucesso!");
+          // Redirecionar ou esconder o login e mostrar o restante da aplicação
+          document.getElementById("loginCard").classList.add("hidden");
+          // carregarDadosUsuario() ou outras funções aqui
+        }
+      });
+    </script>
+<!-- Cadastro individual -->
+<div class="card mb-4 hidden" id="cadastroIndividualCard">
+  <div class="card-header">Cadastro de Novo Usuário</div>
+  <div class="card-body">
+    <form id="formCadastroIndividual">
+      <input type="text" class="form-control mb-2" id="nomeCadastroIndividual" placeholder="Nome de usuário" required>
+      <div class="input-group mb-2">
+        <input type="password" class="form-control" id="senhaCadastroIndividual" placeholder="Senha" required>
+        <button type="button" class="btn btn-outline-secondary" id="toggleCadastroSenha">👁️</button>
       </div>
+      <button type="submit" class="btn btn-success">Cadastrar</button>
+      <button type="button" class="btn btn-link" id="btnVoltarLogin">Voltar ao login</button>
+    </form>
+  </div>
+</div>
+
+<!-- Cadastro de usuários (somente para admin) -->
+<div class="card mb-4 hidden" id="cadastroCard">
+  <div class="card-header">Cadastro de Usuário</div>
+  <div class="card-body">
+    <form id="formMissionario">
+      <input type="text" class="form-control mb-2" id="nomeMissionario" placeholder="Nome do usuário" required>
+      <input type="password" class="form-control mb-2" id="senhaMissionario" placeholder="Senha" required>
+      <select class="form-select mb-2" id="tipoUsuario">
+        <option value="usuario">Usuário</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Cadastrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- Alterar senha -->
+<div class="card mb-4 hidden" id="alterarSenhaCard">
+  <div class="card-header">Alterar Senha</div>
+  <div class="card-body">
+    <form id="formAlterarSenha">
+      <input type="password" class="form-control mb-2" id="senhaAtual" placeholder="Senha atual" required>
+      <input type="password" class="form-control mb-2" id="novaSenha" placeholder="Nova senha" required>
+      <button type="submit" class="btn btn-warning">Alterar Senha</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Mostrar/ocultar senha
+  document.getElementById("toggleCadastroSenha").addEventListener("click", () => {
+    const senhaInput = document.getElementById("senhaCadastroIndividual");
+    senhaInput.type = senhaInput.type === "password" ? "text" : "password";
+  });
+
+  // Voltar para login
+  document.getElementById("btnVoltarLogin").addEventListener("click", () => {
+    document.getElementById("cadastroIndividualCard").classList.add("hidden");
+    document.getElementById("loginCard").classList.remove("hidden");
+  });
+
+  // Cadastro individual
+  document.getElementById("formCadastroIndividual").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById("nomeCadastroIndividual").value.trim();
+    const senha = document.getElementById("senhaCadastroIndividual").value;
+    const email = `${nome.toLowerCase().replace(/\s+/g, '')}@wecbrasil.org`;
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: senha
+    });
+
+    if (error) {
+      alert("Erro ao cadastrar: " + error.message);
+    } else {
+      // Armazenar tipo de usuário padrão (usuario) na tabela
+      await supabase.from("usuarios").insert([{ email, nome, tipo: "usuario" }]);
+      alert("Usuário cadastrado com sucesso!");
+      document.getElementById("cadastroIndividualCard").classList.add("hidden");
+      document.getElementById("loginCard").classList.remove("hidden");
+    }
+  });
+
+  // Cadastro por admin
+  document.getElementById("formMissionario").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById("nomeMissionario").value.trim();
+    const senha = document.getElementById("senhaMissionario").value;
+    const tipo = document.getElementById("tipoUsuario").value;
+    const email = `${nome.toLowerCase().replace(/\s+/g, '')}@wecbrasil.org`;
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: senha
+    });
+
+    if (error) {
+      alert("Erro ao cadastrar usuário: " + error.message);
+    } else {
+      await supabase.from("usuarios").insert([{ email, nome, tipo }]);
+      alert("Usuário cadastrado com sucesso!");
+      document.getElementById("formMissionario").reset();
+    }
+  });
+
+  // Alterar senha
+  document.getElementById("formAlterarSenha").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const novaSenha = document.getElementById("novaSenha").value;
+
+    const { error } = await supabase.auth.updateUser({ password: novaSenha });
+
+    if (error) {
+      alert("Erro ao alterar senha: " + error.message);
+    } else {
+      alert("Senha alterada com sucesso!");
+      document.getElementById("formAlterarSenha").reset();
+    }
+  });
+</script>
+<!-- Registro de uso de serviços -->
+<div class="card mb-4 hidden" id="registroCard">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Registro de Uso</span>
+    <div>
+      <button class="btn btn-outline-secondary btn-sm" onclick="mostrarAlterarSenha()">Alterar Senha</button>
+      <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
     </div>
   </div>
+  <div class="card-body">
+    <form id="formUso">
+      <div class="mb-2"><strong>Usuário logado:</strong> <span id="usuarioLogado"></span></div>
+      <label>Serviço:</label>
+      <select id="tipoServico" class="form-select mb-2" required onchange="mostrarCamposServico()">
+        <option value="">Selecione</option>
+        <option value="lavanderia">Lavanderia</option>
+        <option value="carro">Uso do Carro</option>
+        <option value="xerox">Xerox</option>
+        <option value="refeicoes">Refeições</option>
+        <option value="hospedagem">Hospedagem</option>
+      </select>
+      <div id="detalhesServico" class="mb-3"></div>
+      <button type="submit" class="btn btn-success">Registrar Uso</button>
+    </form>
+  </div>
+</div>
 
-  <script>
-    const { createClient } = supabase;
-    const supabaseClient = createClient('https://xqwubmknwvvonjzaecmk.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxd3VibWtud3Z2b25qemFlY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwODY2OTQsImV4cCI6MjA2OTY2MjY5NH0._42N0mZO4NcLPcCG9YMB0_hkMTLF5tCdlPZYagN3vIk');
-    let usuarioAtual = null;
+<script>
+  let usuarioAtual = null;
 
-    const camposPorServico = {
-  lavanderia: `
-    <input class="form-control mb-2" name="quantidade" type="number" placeholder="Quantidade de lavagens">
-  `,
-  refeicao: `
-    <input class="form-control mb-2" name="data" type="date">
-    <input class="form-control mb-2" name="quantidade" type="number" placeholder="Quantidade de refeições">
-  `,
-  carro: `
-    <input class="form-control mb-2" name="km_inicial" type="number" placeholder="KM Inicial">
-    <input class="form-control mb-2" name="km_final" type="number" placeholder="KM Final">
-    <input class="form-control mb-2" name="uso" placeholder="Uso pessoal ou departamento">
-  `,
-  xerox: `
-    <input class="form-control mb-2" name="quantidade" type="number" placeholder="Quantidade">
-  `,
-  hospedagem: `
-    <input class="form-control mb-2" name="nome" placeholder="Nome do hóspede">
-    <input class="form-control mb-2" name="entrada" type="date">
-    <input class="form-control mb-2" name="saida" type="date">
-  `
-};
+  async function carregarUsuarioLogado() {
+    const { data, error } = await supabase.auth.getUser();
+    if (data?.user) {
+      usuarioAtual = data.user;
+      const { data: perfil } = await supabase
+        .from("usuarios")
+        .select("nome")
+        .eq("email", usuarioAtual.email)
+        .single();
 
-    selecaoServico.addEventListener('change', () => {
-      camposServico.innerHTML = camposPorServico[selecaoServico.value];
-    });
-    selecaoServico.dispatchEvent(new Event('change'));
-
-    formServico.addEventListener('submit', async e => {
-      e.preventDefault();
-      const servico = selecaoServico.value;
-      const inputs = formServico.querySelectorAll('[name]');
-      const detalhes = {};
-      inputs.forEach(i => detalhes[i.name] = i.value);
-
-      const { error } = await supabaseClient.from('registros').insert({
-        usuario_id: usuarioAtual.id,
-        servico,
-        data: new Date().toISOString().split('T')[0],
-        detalhes
-      });
-      if (error) return alert('Erro: ' + error.message);
-      formServico.reset();
-      selecaoServico.dispatchEvent(new Event('change'));
-      carregarRegistros();
-    });
-
-    async function carregarRegistros() {
-      const { data, error } = await supabaseClient.from('registros').select('*').eq('usuario_id', usuarioAtual.id).order('data', { ascending: false });
-      listaRegistros.innerHTML = '';
-      if (!data) return;
-      data.forEach(r => {
-  const li = document.createElement('li');
-  li.className = 'list-group-item';
-  let texto = `${r.data} - ${r.servico}:`;
-  const detalhes = r.detalhes || {};
-  if (r.servico === 'lavanderia') {
-    texto += ` ${detalhes.quantidade || '0'} lavagem(ns)`;
-  } else if (r.servico === 'refeicao') {
-    texto += ` ${detalhes.quantidade || '0'} refeição(ões) em ${detalhes.data || ''}`;
-  } else if (r.servico === 'carro') {
-    texto += ` KM Inicial: ${detalhes.km_inicial || ''}, Final: ${detalhes.km_final || ''}, Uso: ${detalhes.uso || ''}`;
-  } else if (r.servico === 'xerox') {
-    texto += ` ${detalhes.quantidade || ''} página(s)`;
-  } else if (r.servico === 'hospedagem') {
-    texto += ` ${detalhes.nome || ''} (${detalhes.entrada || ''} a ${detalhes.saida || ''})`;
+      document.getElementById("usuarioLogado").textContent = perfil?.nome || usuarioAtual.email;
+    }
   }
-  li.textContent = texto;
-  listaRegistros.appendChild(li);
-      });
+
+  function mostrarAlterarSenha() {
+    document.getElementById("alterarSenhaCard").classList.remove("hidden");
+    document.getElementById("registroCard").classList.add("hidden");
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    location.reload();
+  }
+
+  function mostrarCamposServico() {
+    const tipo = document.getElementById("tipoServico").value;
+    const container = document.getElementById("detalhesServico");
+    container.innerHTML = "";
+
+    switch (tipo) {
+      case "lavanderia":
+        container.innerHTML = `
+          <label>Quantidade de lavagens:</label>
+          <input type="number" class="form-control" id="qtdLavagens" required>
+        `;
+        break;
+      case "carro":
+        container.innerHTML = `
+          <label>Kilometragem inicial:</label>
+          <input type="number" class="form-control mb-2" id="kmInicial" required>
+          <label>Kilometragem final:</label>
+          <input type="number" class="form-control mb-2" id="kmFinal" required>
+          <label>Uso pessoal ou departamento:</label>
+          <input type="text" class="form-control" id="usoCarro" required>
+        `;
+        break;
+      case "xerox":
+        container.innerHTML = `
+          <label>Quantidade de cópias:</label>
+          <input type="number" class="form-control" id="qtdXerox" required>
+        `;
+        break;
+      case "refeicoes":
+        container.innerHTML = `
+          <label>Data:</label>
+          <input type="date" class="form-control mb-2" id="dataRefeicao" required>
+          <label>Quantidade:</label>
+          <input type="number" class="form-control" id="qtdRefeicoes" required>
+        `;
+        break;
+      case "hospedagem":
+        container.innerHTML = `
+          <label>Nome do hóspede:</label>
+          <input type="text" class="form-control mb-2" id="nomeHospede" required>
+          <label>Quantidade de dias:</label>
+          <input type="number" class="form-control" id="qtdDias" required>
+        `;
+        break;
+    }
+  }
+
+  document.getElementById("formUso").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const tipo = document.getElementById("tipoServico").value;
+    const campos = {};
+    let valido = true;
+
+    switch (tipo) {
+      case "lavanderia":
+        campos.qtdLavagens = parseInt(document.getElementById("qtdLavagens").value);
+        break;
+      case "carro":
+        campos.kmInicial = parseInt(document.getElementById("kmInicial").value);
+        campos.kmFinal = parseInt(document.getElementById("kmFinal").value);
+        campos.uso = document.getElementById("usoCarro").value.trim();
+        break;
+      case "xerox":
+        campos.qtdXerox = parseInt(document.getElementById("qtdXerox").value);
+        break;
+      case "refeicoes":
+        campos.data = document.getElementById("dataRefeicao").value;
+        campos.qtdRefeicoes = parseInt(document.getElementById("qtdRefeicoes").value);
+        break;
+      case "hospedagem":
+        campos.nomeHospede = document.getElementById("nomeHospede").value.trim();
+        campos.qtdDias = parseInt(document.getElementById("qtdDias").value);
+        break;
+      default:
+        valido = false;
     }
 
-    async function logout() {
-      await supabaseClient.auth.signOut();
-      location.reload();
+    if (!valido || !usuarioAtual) {
+      alert("Erro ao registrar uso. Verifique os campos.");
+      return;
     }
 
-    formLogin.addEventListener('submit', async e => {
-      e.preventDefault();
-      const email = loginEmail.value;
-      const senha = loginSenha.value;
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
-      if (error) return alert('Erro no login: ' + error.message);
-      location.reload();
+    const { error } = await supabase.from("registros").insert([{
+      email_usuario: usuarioAtual.email,
+      tipo_servico: tipo,
+      dados: campos,
+      data_registro: new Date().toISOString()
+    }]);
+
+    if (error) {
+      alert("Erro ao salvar no banco: " + error.message);
+    } else {
+      alert("Serviço registrado com sucesso!");
+      document.getElementById("formUso").reset();
+      document.getElementById("detalhesServico").innerHTML = "";
+    }
+  });
+
+  // Chamar após login
+  carregarUsuarioLogado();
+</script>
+<!-- Área para relatórios (somente admin) -->
+<div class="card hidden" id="relatorioCard">
+  <div class="card-header">Relatório Atual</div>
+  <div class="mb-3 d-flex gap-2 flex-wrap">
+    <div>
+      <label for="dataInicial" class="form-label">De:</label>
+      <input type="date" class="form-control" id="dataInicial">
+    </div>
+    <div>
+      <label for="dataFinal" class="form-label">Até:</label>
+      <input type="date" class="form-control" id="dataFinal">
+    </div>
+  </div>
+  <div class="card-body">
+    <button class="btn btn-info" onclick="gerarRelatorio()">Gerar Relatório</button>
+    <pre id="relatorio" class="mt-3"></pre>
+  <div class="mt-3">
+    <button class="btn btn-danger" onclick="baixarRelatorioPDF()">📄 Baixar PDF</button>
+    <button class="btn btn-success" onclick="baixarRelatorioCSV()">📊 Baixar Excel (CSV)</button>
+  </div>
+  </div>
+</div>
+
+<!-- Relatório de refeições por período -->
+<div class="card hidden" id="refeicoesCard">
+  <div class="card-header">Relatório de refeições por período</div>
+  <div class="card-body">
+    <div class="mb-2 d-flex gap-2 flex-wrap">
+      <div>
+        <label for="dataRefInicio" class="form-label">De:</label>
+        <input type="date" class="form-control" id="dataRefInicio">
+      </div>
+      <div>
+        <label for="dataRefFim" class="form-label">Até:</label>
+        <input type="date" class="form-control" id="dataRefFim">
+      </div>
+    </div>
+    <button class="btn btn-success mb-2" onclick="gerarRelatorioRefeicoesPeriodo()">Gerar Relatório</button>
+    <pre id="relatorioRefeicoesPeriodo" class="bg-light p-2 rounded"></pre>
+    <a id="whatsappLinkRefeicoes" class="btn btn-outline-success" href="#" target="_blank" style="display: none;">Compartilhar via WhatsApp</a>
+  </div>
+</div>
+
+<!-- Gerenciar usuários -->
+<div class="card hidden" id="gerenciarUsuariosCard">
+  <div class="card-header">Gerenciar Usuários</div>
+  <div class="card-body">
+    <ul id="listaUsuarios" class="list-group"></ul>
+  </div>
+</div>
+
+<script>
+  async function gerarRelatorio() {
+    const inicio = document.getElementById("dataInicial").value;
+    const fim = document.getElementById("dataFinal").value;
+
+    const { data, error } = await supabase
+      .from("registros")
+      .select("*")
+      .gte("data_registro", inicio)
+      .lte("data_registro", fim);
+
+    if (error) {
+      alert("Erro ao buscar registros: " + error.message);
+      return;
+    }
+
+    let relatorioTexto = "RELATÓRIO DE USO DE SERVIÇOS\n\n";
+    data.forEach(item => {
+      relatorioTexto += `Usuário: ${item.email_usuario}\n`;
+      relatorioTexto += `Serviço: ${item.tipo_servico}\n`;
+      relatorioTexto += `Data: ${new Date(item.data_registro).toLocaleString()}\n`;
+      relatorioTexto += `Detalhes: ${JSON.stringify(item.dados, null, 2)}\n\n`;
     });
 
-    (async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        usuarioAtual = user;
-        usuarioLogado.textContent = user.email;
-        loginCard.classList.add('hidden');
-        registroCard.classList.remove('hidden');
-        carregarRegistros();
+    document.getElementById("relatorio").textContent = relatorioTexto;
+  }
+
+  async function gerarRelatorioRefeicoesPeriodo() {
+    const inicio = document.getElementById("dataRefInicio").value;
+    const fim = document.getElementById("dataRefFim").value;
+
+    const { data, error } = await supabase
+      .from("registros")
+      .select("*")
+      .eq("tipo_servico", "refeicoes")
+      .gte("dados->>data", inicio)
+      .lte("dados->>data", fim);
+
+    if (error) {
+      alert("Erro ao buscar refeições: " + error.message);
+      return;
+    }
+
+    let total = 0;
+    let relatorio = "RELATÓRIO DE REFEIÇÕES\n\n";
+    data.forEach(item => {
+      const nome = item.email_usuario;
+      const dataRef = item.dados.data;
+      const qtd = parseInt(item.dados.qtdRefeicoes || 0);
+      total += qtd;
+
+      relatorio += `Data: ${dataRef} | Usuário: ${nome} | Quantidade: ${qtd}\n`;
+    });
+
+    relatorio += `\nTotal de refeições: ${total}`;
+    document.getElementById("relatorioRefeicoesPeriodo").textContent = relatorio;
+
+    // WhatsApp
+    const textoWhats = encodeURIComponent(relatorio);
+    const link = `https://wa.me/?text=${textoWhats}`;
+    const whatsappBtn = document.getElementById("whatsappLinkRefeicoes");
+    whatsappBtn.href = link;
+    whatsappBtn.style.display = "inline-block";
+  }
+
+  async function carregarUsuarios() {
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("id, nome, email, tipo");
+
+    if (error) {
+      alert("Erro ao carregar usuários: " + error.message);
+      return;
+    }
+
+    const lista = document.getElementById("listaUsuarios");
+    lista.innerHTML = "";
+
+    data.forEach(usuario => {
+      const li = document.createElement("li");
+      li.className = "list-group-item d-flex justify-content-between align-items-center";
+      li.innerHTML = `
+        <div>
+          <strong>${usuario.nome}</strong> (${usuario.email}) - ${usuario.tipo}
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="excluirUsuario(${usuario.id}, '${usuario.email}')">Excluir</button>
+      `;
+      lista.appendChild(li);
+    });
+  }
+
+  async function excluirUsuario(id, email) {
+    if (confirm(`Deseja excluir o usuário ${email}?`)) {
+      const { error } = await supabase.from("usuarios").delete().eq("id", id);
+      if (error) {
+        alert("Erro ao excluir usuário: " + error.message);
+      } else {
+        alert("Usuário excluído!");
+        carregarUsuarios();
       }
-    })();
+    }
+  }
+</script>
+
+<script>
+  async function logout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      alert("Erro ao sair: " + error.message);
+    } else {
+      location.reload(); // ou redireciona para a tela de login, se preferir
+    }
+  }
+</script>
+function mostrarCamposServico() {
+  const tipo = document.getElementById('tipoServico').value;
+  const detalhes = document.getElementById('detalhesServico');
+  detalhes.innerHTML = '';
+
+  const hoje = new Date().toISOString().split('T')[0];
+
+  if (tipo === 'lavanderia') {
+    detalhes.innerHTML = `
+      <label>Data:</label>
+      <input type="date" class="form-control mb-2" id="dataLavanderia" value="${hoje}">
+      <label>Quantidade de lavagens:</label>
+      <input type="number" class="form-control mb-2" id="qtdLavagens" min="0" value="">
+      <label>Quantidade de secagens:</label>
+      <input type="number" class="form-control mb-2" id="qtdSecagens" min="0" value="">
+    `;
+  } else if (tipo === 'carro') {
+    detalhes.innerHTML = `
+      <label>Data:</label>
+      <input type="date" class="form-control mb-2" id="dataCarro" value="${hoje}">
+      <label>Kilometragem inicial:</label>
+      <input type="number" class="form-control mb-2" id="kmInicial" min="0" value="">
+      <label>Kilometragem final:</label>
+      <input type="number" class="form-control mb-2" id="kmFinal" min="0" value="">
+      <label>Uso:</label>
+      <select class="form-select mb-2" id="usoCarro" onchange="mostrarCampoDepartamento()">
+        <option value="pessoal">Pessoal</option>
+        <option value="departamento">Departamento</option>
+      </select>
+      <div id="campoDepartamento"></div>
+      <label>Quantidade de uso da TAG:</label>
+      <input type="number" class="form-control mb-2" id="qtdTag" min="0" value="">
+    `;
+  } else if (tipo === 'xerox') {
+    detalhes.innerHTML = `
+      <label>Data:</label>
+      <input type="date" class="form-control mb-2" id="dataXerox" value="${hoje}">
+      <label>Quantidade de cópias:</label>
+      <input type="number" class="form-control mb-2" id="qtdXerox" min="1" value="">
+    `;
+  } else if (tipo === 'refeicoes') {
+    detalhes.innerHTML = `
+      <label>Selecionar dias e quantidades:</label>
+      <div id="diasRefeicoes" class="mb-2"></div>
+      <button type="button" class="btn btn-outline-primary btn-sm mb-2" onclick="adicionarDiaRefeicao()">Adicionar Dia</button>
+    `;
+  } else if (tipo === 'hospedagem') {
+    detalhes.innerHTML = `
+      <label>Data de entrada:</label>
+      <input type="date" class="form-control mb-2" id="entrada">
+      <label>Data de saída:</label>
+      <input type="date" class="form-control mb-2" id="saida" onchange="validarHospedagem()">
+      <div id="erroData" class="text-danger"></div>
+    `;
+  }
+}
+
+    function adicionarDiaRefeicao() {
+  const diasContainer = document.getElementById('diasRefeicoes');
+  const index = diasContainer.children.length;
+  const novoDia = document.createElement('div');
+  novoDia.classList.add('mb-2', 'linha-dia');
+  novoDia.innerHTML = `
+    <div class="d-flex align-items-center">
+      <input type="date" class="form-control me-2 data-refeicao" required>
+      <input type="number" class="form-control qtd-refeicao" placeholder="Quantidade" min="1" required>
+      <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.parentElement.parentElement.remove()">X</button>
+    </div>
+  `;
+  diasContainer.appendChild(novoDia);
+    }
+
+    function validarHospedagem() {
+      const entrada = document.getElementById('entrada').value;
+      const saida = document.getElementById('saida').value;
+      const erro = document.getElementById('erroData');
+      if (entrada && saida && saida < entrada) {
+        erro.textContent = 'A data de saída não pode ser anterior à entrada.';
+      } else {
+        erro.textContent = '';
+      }
+    }
   </script>
+<script type="module">
+  import { supabase } from './supabaseClient.js'; // ajuste o caminho se necessário
+
+  let usuarioAtual = null;
+
+  async function carregarUsuario() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      console.error('Usuário não autenticado');
+      return;
+    }
+
+    // Buscar os dados do usuário na tabela "usuarios"
+    const { data, error: userError } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id_auth', user.id)
+      .single();
+
+    if (userError || !data) {
+      console.error('Erro ao carregar dados do usuário:', userError);
+      return;
+    }
+
+    usuarioAtual = data;
+
+    document.getElementById('usuarioLogado').textContent = usuarioAtual.nome;
+    document.getElementById('loginCard').classList.add('hidden');
+    document.getElementById('cadastroIndividualCard').classList.add('hidden');
+    document.getElementById('registroCard').classList.remove('hidden');
+
+    if (usuarioAtual.tipo === 'admin') {
+      document.getElementById('relatorioCard').classList.remove('hidden');
+      document.getElementById('cadastroCard').classList.remove('hidden');
+      document.getElementById('refeicoesCard').classList.remove('hidden');
+      document.getElementById('gerenciarUsuariosCard').classList.remove('hidden');
+      carregarListaUsuarios();
+    }
+  }
+
+  carregarUsuario();
+</script>
+<script type="module">
+  import { supabase } from './supabaseClient.js'; // ajuste o caminho se necessário
+
+  async function carregarListaUsuarios() {
+    const lista = document.getElementById('listaUsuarios');
+    lista.innerHTML = '';
+
+    const { data: usuarios, error } = await supabase
+      .from('usuarios')
+      .select('id_auth, nome, tipo');
+
+    if (error) {
+      console.error('Erro ao carregar usuários:', error);
+      return;
+    }
+
+    usuarios.forEach((u) => {
+      if (u.id_auth === usuarioAtual.id_auth) return; // Não exibe opção de excluir a si mesmo
+
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `
+        <span>${u.nome} (${u.tipo})</span>
+        <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.id_auth}')">Excluir</button>
+      `;
+      lista.appendChild(li);
+    });
+  }
+
+  async function excluirUsuario(idAuth) {
+    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+
+    const { error } = await supabase
+      .from('usuarios')
+      .delete()
+      .eq('id_auth', idAuth);
+
+    if (error) {
+      alert('Erro ao excluir usuário: ' + error.message);
+    } else {
+      carregarListaUsuarios();
+    }
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    location.reload();
+  }
+
+  function mostrarAlterarSenha() {
+    document.getElementById('alterarSenhaCard').classList.remove('hidden');
+  }
+</script>
+<script type="module">
+  import { supabase } from './supabaseClient.js'; // ajuste o caminho conforme necessário
+
+  document.getElementById('formLogin').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const email = document.getElementById('loginUsuario').value;
+    const senha = document.getElementById('loginSenha').value;
+
+    const { data: authData, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha
+    });
+
+    if (loginError) {
+      alert('Usuário ou senha inválidos');
+      console.error(loginError);
+      return;
+    }
+
+    const user = authData.user;
+
+    // Carregar perfil do usuário na tabela `usuarios`
+    const { data: perfil, error: perfilError } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id_auth', user.id)
+      .single();
+
+    if (perfilError || !perfil) {
+      alert('Perfil de usuário não encontrado.');
+      console.error(perfilError);
+      return;
+    }
+
+    usuarioAtual = perfil;
+
+    // Salva temporariamente em memória para uso imediato
+    carregarUsuario(); // chama a função de interface (já atualizada antes)
+  });
+</script>
+<script type="module">
+  import { supabase } from './supabaseClient.js';
+
+  // Cadastro individual (com Supabase Auth + tabela `usuarios`)
+  document.getElementById('formCadastroIndividual').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const nome = document.getElementById('nomeCadastroIndividual').value;
+    const senha = document.getElementById('senhaCadastroIndividual').value;
+
+    const emailFake = `${nome.toLowerCase().replace(/\s+/g, '')}@wecbrasil.com`;
+
+    // Verifica se já existe nome de usuário
+    const { data: existente, error: erroBusca } = await supabase
+      .from('usuarios')
+      .select('id')
+      .eq('nome', nome)
+      .single();
+
+    if (existente) {
+      alert('Usuário já existe!');
+      return;
+    }
+
+    // Cadastra no Supabase Auth
+    const { data: signupData, error: authError } = await supabase.auth.signUp({
+      email: emailFake,
+      password: senha
+    });
+
+    if (authError) {
+      alert('Erro ao criar usuário');
+      console.error(authError);
+      return;
+    }
+
+    // Insere perfil na tabela `usuarios`
+    const { error: dbError } = await supabase.from('usuarios').insert([{
+      id_auth: signupData.user.id,
+      nome: nome,
+      tipo: 'usuario'
+    }]);
+
+    if (dbError) {
+      alert('Erro ao salvar perfil do usuário');
+      console.error(dbError);
+      return;
+    }
+
+    alert('Usuário cadastrado! Faça login.');
+    document.getElementById('formCadastroIndividual').reset();
+    document.getElementById('cadastroIndividualCard').classList.add('hidden');
+    document.getElementById('loginCard').classList.remove('hidden');
+  });
+
+  // Botões para alternar entre login e cadastro
+  document.getElementById('btnMostrarCadastro').addEventListener('click', function() {
+    document.getElementById('loginCard').classList.add('hidden');
+    document.getElementById('cadastroIndividualCard').classList.remove('hidden');
+  });
+
+  document.getElementById('btnVoltarLogin').addEventListener('click', function() {
+    document.getElementById('cadastroIndividualCard').classList.add('hidden');
+    document.getElementById('loginCard').classList.remove('hidden');
+  });
+
+  // Alterar senha (via Supabase Auth)
+  document.getElementById('formAlterarSenha').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const senhaAtual = document.getElementById('senhaAtual').value;
+    const novaSenha = document.getElementById('novaSenha').value;
+
+    // Reautentica o usuário
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const user = sessionData?.session?.user;
+
+    if (!user) {
+      alert('Usuário não autenticado.');
+      return;
+    }
+
+    const email = user.email;
+
+    // Tenta login com senha atual para verificar se está correta
+    const { error: authCheckError } = await supabase.auth.signInWithPassword({
+      email,
+      password: senhaAtual
+    });
+
+    if (authCheckError) {
+      alert('Senha atual incorreta');
+      return;
+    }
+
+    // Altera senha
+    const { error: updateError } = await supabase.auth.updateUser({ password: novaSenha });
+
+    if (updateError) {
+      alert('Erro ao alterar senha');
+      console.error(updateError);
+      return;
+    }
+
+    alert('Senha alterada com sucesso.');
+    document.getElementById('formAlterarSenha').reset();
+    document.getElementById('alterarSenhaCard').classList.add('hidden');
+  });
+
+  carregarUsuario(); // já assumindo função atualizada anteriormente
+</script>
+<script>
+  function mostrarCampoDepartamento() {
+    const uso = document.getElementById('usoCarro').value;
+    const campo = document.getElementById('campoDepartamento');
+    if (uso === 'departamento') {
+      campo.innerHTML = `
+        <label>Departamento:</label>
+        <input type="text" class="form-control mb-2" id="departamento">
+      `;
+    } else {
+      campo.innerHTML = '';
+    }
+  }
+</script>
+<script>
+  async function gerarRelatorio() {
+    const { data: registros, error } = await supabase
+      .from('registros')
+      .select('*');
+
+    if (error) {
+      console.error('Erro ao buscar registros:', error);
+      document.getElementById('relatorio').textContent = 'Erro ao carregar os registros.';
+      return;
+    }
+
+    const dataInicial = document.getElementById('dataInicial').value;
+    const dataFinal = document.getElementById('dataFinal').value;
+
+    let inicio = dataInicial ? new Date(dataInicial) : null;
+    let fim = dataFinal ? new Date(dataFinal) : null;
+
+    const filtrados = registros.filter(reg => {
+      const data = new Date(reg.data || reg.entrada);
+      if (inicio && data < inicio) return false;
+      if (fim && data > fim) return false;
+      return true;
+    });
+
+    if (filtrados.length === 0) {
+      document.getElementById('relatorio').textContent = 'Nenhum registro encontrado no período selecionado.';
+      return;
+    }
+
+    const resumo = {};
+    filtrados.forEach(reg => {
+      const nome = reg.usuario;
+      if (!resumo[nome]) {
+        resumo[nome] = {
+          lavanderia: 0,
+          carroPessoal: 0,
+          carroDepartamento: {},
+          carroTag: 0,
+          carroTagPorDepartamento: {},
+          xerox: 0,
+          refeicoes: 0,
+          hospedagemDias: 0
+        };
+      }
+
+      // O restante da lógica do resumo continua no próximo trecho
+    });
+  }
+</script>
+    filtrados.forEach(reg => {
+      const nome = reg.usuario;
+      if (!resumo[nome]) {
+        resumo[nome] = {
+          lavanderia: 0,
+          carroPessoal: 0,
+          carroDepartamento: {},
+          carroTag: 0,
+          carroTagPorDepartamento: {},
+          xerox: 0,
+          refeicoes: 0,
+          hospedagemDias: 0
+        };
+      }
+
+      switch (reg.tipo) {
+        case 'lavanderia':
+          resumo[nome].lavanderia += parseInt(reg.qtdLavagens || 0);
+          break;
+
+        case 'carro':
+          const qtdTag = parseInt(reg.qtdTag || 0);
+          if (reg.uso === 'departamento') {
+            const depto = reg.departamento || 'Não especificado';
+            if (!resumo[nome].carroDepartamento[depto]) resumo[nome].carroDepartamento[depto] = 0;
+            resumo[nome].carroDepartamento[depto] += parseInt(reg.km || 0);
+            if (!resumo[nome].carroTagPorDepartamento[depto]) resumo[nome].carroTagPorDepartamento[depto] = 0;
+            resumo[nome].carroTagPorDepartamento[depto] += qtdTag;
+          } else {
+            resumo[nome].carroPessoal += parseInt(reg.km || 0);
+            resumo[nome].carroTag += qtdTag;
+          }
+          break;
+
+        case 'xerox':
+          resumo[nome].xerox += parseInt(reg.qtd || 0);
+          break;
+
+        case 'refeicoes':
+          reg.dias?.forEach(dia => {
+            const data = new Date(dia.data);
+            if ((inicio && data < inicio) || (fim && data > fim)) return;
+            resumo[nome].refeicoes += parseInt(dia.qtd || 0);
+          });
+          break;
+
+        case 'hospedagem':
+          const entrada = new Date(reg.entrada);
+          const saida = new Date(reg.saida);
+          if ((inicio && saida < inicio) || (fim && entrada > fim)) return;
+          const dias = Math.ceil((saida - entrada) / (1000 * 60 * 60 * 24));
+          if (dias > 0) resumo[nome].hospedagemDias += dias;
+          break;
+      }
+    });
+
+    // Exibe o resumo na tela (pode adaptar esse trecho para tabela ou texto formatado)
+    let html = '<ul class="list-group">';
+    for (let nome in resumo) {
+      const r = resumo[nome];
+      html += `<li class="list-group-item"><strong>${nome}</strong><br>`;
+      html += `Lavanderia: ${r.lavanderia}<br>`;
+      html += `Carro (uso pessoal): ${r.carroPessoal} km, TAGs: ${r.carroTag}<br>`;
+      html += `Carro (por departamento): ${Object.entries(r.carroDepartamento).map(([dep, km]) => `${dep}: ${km} km`).join(', ')}<br>`;
+      html += `TAGs por departamento: ${Object.entries(r.carroTagPorDepartamento).map(([dep, qtd]) => `${dep}: ${qtd}`).join(', ')}<br>`;
+      html += `Xerox: ${r.xerox}<br>`;
+      html += `Refeições: ${r.refeicoes}<br>`;
+      html += `Hospedagem: ${r.hospedagemDias} dias<br>`;
+      html += '</li>';
+    }
+    html += '</ul>';
+
+    document.getElementById('relatorio').innerHTML = html;
+  }
+</script>
+  switch (tipo) {
+    case 'lavanderia':
+      const qtdLavagens = parseInt(document.getElementById('qtdLavagens').value || 0);
+      if (!qtdLavagens) return alert('Informe a quantidade de lavagens.');
+      registro.qtdLavagens = qtdLavagens;
+      break;
+
+    case 'carro':
+      const kmInicial = parseInt(document.getElementById('kmInicial').value || 0);
+      const kmFinal = parseInt(document.getElementById('kmFinal').value || 0);
+      const uso = document.getElementById('usoCarro').value;
+      const qtdTag = parseInt(document.getElementById('qtdTag').value || 0);
+      if (kmFinal < kmInicial) return alert('A quilometragem final não pode ser menor que a inicial.');
+      registro.km = kmFinal - kmInicial;
+      registro.kmInicial = kmInicial;
+      registro.kmFinal = kmFinal;
+      registro.uso = uso;
+      registro.qtdTag = qtdTag;
+      if (uso === 'departamento') {
+        const departamento = document.getElementById('departamento').value.trim();
+        if (!departamento) return alert('Informe o departamento.');
+        registro.departamento = departamento;
+      }
+      break;
+
+    case 'xerox':
+      const qtd = parseInt(document.getElementById('qtdXerox').value || 0);
+      if (!qtd) return alert('Informe a quantidade de cópias.');
+      registro.qtd = qtd;
+      break;
+
+    case 'refeicoes':
+      const dias = [];
+      const inputs = document.querySelectorAll('.input-dia-refeicao');
+      inputs.forEach(input => {
+        const data = input.querySelector('.data-refeicao').value;
+        const qtd = parseInt(input.querySelector('.qtd-refeicao').value || 0);
+        if (data && qtd) dias.push({ data, qtd });
+      });
+      if (dias.length === 0) return alert('Informe pelo menos uma data e quantidade.');
+      registro.dias = dias;
+      break;
+
+    case 'hospedagem':
+      const entrada = document.getElementById('entradaHospedagem').value;
+      const saida = document.getElementById('saidaHospedagem').value;
+      if (!entrada || !saida) return alert('Informe as datas de entrada e saída.');
+      if (new Date(saida) < new Date(entrada)) return alert('Data de saída não pode ser anterior à entrada.');
+      registro.entrada = entrada;
+      registro.saida = saida;
+      break;
+  }
+
+  registros.push(registro);
+  localStorage.setItem('registros', JSON.stringify(registros));
+  alert('Serviço registrado com sucesso!');
+  document.getElementById('formUso').reset();
+  document.getElementById('camposServico').innerHTML = '';
+});
+<script>
+document.getElementById('formUso').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const tipo = document.getElementById('tipoServico').value;
+  if (!tipo) return alert('Selecione um tipo de serviço.');
+
+  const usuario = usuarioAtual.nome;
+  const hoje = new Date().toISOString().split('T')[0];
+  const registro = { tipo, usuario, data: hoje };
+
+  // Validação e preenchimento por tipo
+  if (tipo === 'lavanderia') {
+    const lavagens = document.getElementById('qtdLavagens').value;
+    const secagens = document.getElementById('qtdSecagens').value;
+    if (!lavagens || !secagens) return alert('Preencha a quantidade de lavagens e secagens.');
+    registro.qtdLavagens = parseInt(lavagens);
+    registro.qtdSecagens = parseInt(secagens);
+    registro.data = document.getElementById('dataLavanderia').value;
+  } else if (tipo === 'carro') {
+    const km = document.getElementById('kmRodado').value;
+    const qtdTag = document.getElementById('qtdTag').value;
+    if (!km) return alert('Informe os km rodados.');
+    registro.km = parseInt(km);
+    registro.qtdTag = parseInt(qtdTag) || 0;
+    registro.uso = document.getElementById('usoCarro').value;
+    registro.data = document.getElementById('dataCarro').value;
+    if (registro.uso === 'departamento') {
+      const departamento = document.getElementById('departamento').value;
+      if (!departamento) return alert('Informe o nome do departamento.');
+      registro.departamento = departamento;
+    }
+  } else if (tipo === 'xerox') {
+    const qtd = document.getElementById('qtdXerox').value;
+    if (!qtd) return alert('Informe a quantidade de cópias.');
+    registro.qtd = parseInt(qtd);
+    registro.data = document.getElementById('dataXerox').value;
+  } else if (tipo === 'refeicoes') {
+    const dias = [];
+    let erro = false;
+    document.querySelectorAll('.linha-dia').forEach(el => {
+      const data = el.querySelector('.data-refeicao').value;
+      const qtd = el.querySelector('.qtd-refeicao').value;
+      if (!data || !qtd) erro = true;
+      dias.push({ data, qtd: parseInt(qtd) });
+    });
+    if (erro || dias.length === 0) return alert('Preencha todos os dias e quantidades de refeições.');
+    registro.dias = dias;
+  } else if (tipo === 'hospedagem') {
+    const entrada = document.getElementById('entrada').value;
+    const saida = document.getElementById('saida').value;
+    if (!entrada || !saida) return alert('Preencha as datas de entrada e saída.');
+    if (saida < entrada) return alert('A data de saída não pode ser anterior à entrada.');
+    registro.entrada = entrada;
+    registro.saida = saida;
+  }
+
+  // Envio para Supabase
+  const { error } = await supabase
+    .from('registros')
+    .insert([registro]);
+
+  if (error) {
+    console.error(error);
+    alert('Erro ao registrar serviço no banco de dados.');
+  } else {
+    alert('Serviço registrado com sucesso!');
+    document.getElementById('formUso').reset();
+    document.getElementById('camposServico').innerHTML = '';
+  }
+});
+</script>
+<script>
+document.getElementById('formUso').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const tipo = document.getElementById('tipoServico').value;
+  if (!tipo) return alert('Selecione um tipo de serviço.');
+
+  const usuario = usuarioAtual.nome;
+  const hoje = new Date().toISOString().split('T')[0];
+  const registro = { tipo, usuario, data: hoje };
+
+  // Validação e preenchimento por tipo (mantido como antes)
+  // ...
+
+  // ✅ Confirmação antes de registrar
+  if (!confirm('Deseja registrar este uso de serviço?')) return;
+
+  // Envio para Supabase
+  const { error } = await supabase
+    .from('registros')
+    .insert([registro]);
+
+  if (error) {
+    console.error(error);
+    alert('Erro ao registrar serviço no banco de dados.');
+  } else {
+    alert('Registro salvo com sucesso!');
+    document.getElementById('formUso').reset();
+    document.getElementById('detalhesServico').innerHTML = '';
+  }
+});
+
+// 📊 Geração de relatório de refeições por período
+async function gerarRelatorioRefeicoesPeriodo() {
+  const dataInicial = document.getElementById('dataRefInicio').value;
+  const dataFinal = document.getElementById('dataRefFim').value;
+
+  if (!dataInicial || !dataFinal) {
+    alert('Selecione um período válido.');
+    return;
+  }
+
+  const inicio = new Date(dataInicial);
+  const fim = new Date(dataFinal);
+  fim.setHours(23, 59, 59, 999);
+
+  const { data, error } = await supabase
+    .from('registros')
+    .select('*')
+    .eq('tipo', 'refeicoes');
+
+  if (error) {
+    console.error(error);
+    alert('Erro ao buscar registros.');
+    return;
+  }
+
+  const resumo = {};
+
+  data.forEach(reg => {
+    if (Array.isArray(reg.dias)) {
+      reg.dias.forEach(dia => {
+        const dataRef = new Date(dia.data);
+        if (dataRef >= inicio && dataRef <= fim) {
+          const diaStr = dataRef.toISOString().split('T')[0];
+          if (!resumo[diaStr]) resumo[diaStr] = 0;
+          resumo[diaStr] += parseInt(dia.qtd || 0);
+        }
+      });
+    }
+  });
+
+  const formatarData = str => {
+    const [ano, mes, dia] = str.split('-');
+    return `${dia}/${mes}/${ano}`;
+  };
+
+  let texto = `🗓️ Refeições agendadas por dia (${formatarData(dataInicial)} a ${formatarData(dataFinal)}):\n\n`;
+
+  if (Object.keys(resumo).length === 0) {
+    texto += 'Nenhum agendamento encontrado.';
+  } else {
+    const diasOrdenados = Object.keys(resumo).sort();
+    diasOrdenados.forEach(dia => {
+      const [ano, mes, diaNum] = dia.split('-');
+      texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
+    });
+  }
+
+  document.getElementById('relatorioRefeicoesPeriodo').textContent = texto;
+
+  const link = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  const whatsappBtn = document.getElementById('whatsappLinkRefeicoes');
+  whatsappBtn.href = link;
+  whatsappBtn.style.display = 'inline-block';
+}
+</script>
+<script>
+  // Alternar exibição da senha
+  document.getElementById('toggleLoginSenha').addEventListener('click', function () {
+    const input = document.getElementById('loginSenha');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    this.textContent = input.type === 'password' ? '👁️' : '🙈';
+  });
+
+  document.getElementById('toggleCadastroSenha').addEventListener('click', function () {
+    const input = document.getElementById('senhaCadastroIndividual');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    this.textContent = input.type === 'password' ? '👁️' : '🙈';
+  });
+</script>
+
+<script>
+  // Cadastro de novo missionário
+  document.getElementById('formMissionario').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const nome = document.getElementById('nomeMissionario').value.trim();
+    const senha = document.getElementById('senhaMissionario').value.trim();
+    const tipo = document.getElementById('tipoUsuario').value;
+
+    if (!nome || !senha) {
+      alert('Preencha todos os campos.');
+      return;
+    }
+
+    // Verifica se já existe um usuário com esse nome
+    const { data: usuariosExistentes, error: erroBusca } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('nome', nome);
+
+    if (erroBusca) {
+      console.error(erroBusca);
+      alert('Erro ao verificar usuários.');
+      return;
+    }
+
+    if (usuariosExistentes.length > 0) {
+      alert('Usuário já existe!');
+      return;
+    }
+
+    // Insere novo usuário
+    const { error: erroInsercao } = await supabase
+      .from('usuarios')
+      .insert([{ nome, senha, tipo }]);
+
+    if (erroInsercao) {
+      console.error(erroInsercao);
+      alert('Erro ao cadastrar usuário.');
+      return;
+    }
+
+    alert(`Usuário "${nome}" cadastrado como "${tipo}" com sucesso.`);
+    document.getElementById('formMissionario').reset();
+    carregarListaUsuarios(); // Função que deve listar usuários da tabela 'usuarios'
+  });
+</script>
+<script>
+  function baixarRelatorioPDF() {
+    const texto = document.getElementById('relatorio').textContent;
+    if (!texto) return alert('Nenhum relatório para exportar.');
+
+    const win = window.open('', '_blank');
+    win.document.write('<pre>' + texto + '</pre>');
+    win.document.close();
+    win.focus();
+    win.print();
+  }
+
+  function baixarRelatorioCSV() {
+    const texto = document.getElementById('relatorio').textContent;
+    if (!texto) return alert('Nenhum relatório para exportar.');
+
+    const linhas = texto.trim().split('\n');
+    let csv = '';
+    linhas.forEach(l => {
+      csv += `"${l.replace(/"/g, '""')}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'relatorio.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+</script>
 </body>
 </html>
+obrigado
