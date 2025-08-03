@@ -267,6 +267,47 @@
   }
 
   carregarUsuarioLogado();
+
+  // ✅ Função do botão "Cadastrar novo usuário"
+  document.getElementById("botaoCadastro").addEventListener("click", async () => {
+    const email = prompt("Digite o e-mail do novo usuário:");
+    const senha = prompt("Digite a senha:");
+    const nome = prompt("Digite o nome completo:");
+    const tipo = prompt("Digite o tipo (admin ou usuario):", "usuario");
+
+    if (!email || !senha || !nome || !tipo) {
+      alert("Todos os campos são obrigatórios.");
+      return;
+    }
+
+    // 1. Cria o usuário no Supabase Auth
+    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+      email,
+      password: senha
+    });
+
+    if (authError) {
+      alert("Erro ao criar usuário: " + authError.message);
+      return;
+    }
+
+    const userId = authData.user.id;
+
+    // 2. Insere dados na tabela `usuarios`
+    const { error: insertError } = await supabaseClient.from("usuarios").insert([
+      {
+        auth_user_id: userId,
+        nome: nome,
+        tipo: tipo
+      }
+    ]);
+
+    if (insertError) {
+      alert("Usuário criado no Auth, mas erro ao salvar no banco: " + insertError.message);
+    } else {
+      alert("Usuário criado com sucesso!");
+    }
+  });
 </script>
 <script>
   function mostrarAlterarSenha() {
@@ -977,6 +1018,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
 
 
 
