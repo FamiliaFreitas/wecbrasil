@@ -216,7 +216,7 @@
     const { data, error } = await supabaseClient.auth.getUser();
     if (data?.user) {
       usuarioAtual = data.user;
-      const { data: perfil } = await supabaseClient.
+      const { data: perfil } = await supabaseClient
         .from("usuarios")
         .select("nome")
         .eq("email", usuarioAtual.email)
@@ -456,7 +456,7 @@ document.getElementById("formUso").addEventListener("submit", async (e) => {
     const inicio = document.getElementById("dataInicial").value;
     const fim = document.getElementById("dataFinal").value;
 
-    const { data, error } = await supabaseClient.
+    const { data, error } = await supabaseClient
       .from("registros")
       .select("*")
       .gte("data_registro", inicio)
@@ -482,7 +482,7 @@ document.getElementById("formUso").addEventListener("submit", async (e) => {
     const inicio = document.getElementById("dataRefInicio").value;
     const fim = document.getElementById("dataRefFim").value;
 
-    const { data, error } = await supabaseClient.
+    const { data, error } = await supabaseClient
       .from("registros")
       .select("*")
       .eq("tipo_servico", "refeicoes")
@@ -517,7 +517,7 @@ document.getElementById("formUso").addEventListener("submit", async (e) => {
   }
 
   async function carregarUsuarios() {
-    const { data, error } = await supabaseClient.
+    const { data, error } = await supabaseClient
       .from("usuarios")
       .select("id, nome, email, tipo");
 
@@ -649,7 +649,7 @@ function mostrarCamposServico() {
     }
   </script>
 <script type="module">
-  import { supabaseClient. } from './supabaseClient.js'; // ajuste o caminho se necessário
+  import { supabaseClient } from './supabaseClient.js'; // ajuste o caminho se necessário
 
   let usuarioAtual = null;
 
@@ -662,7 +662,7 @@ function mostrarCamposServico() {
     }
 
     // Buscar os dados do usuário na tabela "usuarios"
-    const { data, error: userError } = await supabaseClient.
+    const { data, error: userError } = await supabaseClient
       .from('usuarios')
       .select('*')
       .eq('id_auth', user.id)
@@ -692,13 +692,13 @@ function mostrarCamposServico() {
   carregarUsuario();
 </script>
 <script type="module">
-  import { supabaseClient. } from './supabaseClient.js'; // ajuste o caminho se necessário
+  import { supabaseClient } from './supabaseClient.js'; // ajuste o caminho se necessário
 
   async function carregarListaUsuarios() {
     const lista = document.getElementById('listaUsuarios');
     lista.innerHTML = '';
 
-    const { data: usuarios, error } = await supabaseClient.
+    const { data: usuarios, error } = await supabaseClient
       .from('usuarios')
       .select('id_auth, nome, tipo');
 
@@ -723,7 +723,7 @@ function mostrarCamposServico() {
   async function excluirUsuario(idAuth) {
     if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
-    const { error } = await supabaseClient.
+    const { error } = await supabaseClient
       .from('usuarios')
       .delete()
       .eq('id_auth', idAuth);
@@ -745,7 +745,7 @@ function mostrarCamposServico() {
   }
 </script>
 <script type="module">
-  import { supabaseClient. } from './supabaseClient.js'; // ajuste o caminho conforme necessário
+  import { supabaseClient } from './supabaseClient.js'; // ajuste o caminho conforme necessário
 
   document.getElementById('formLogin').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -767,7 +767,7 @@ function mostrarCamposServico() {
     const user = authData.user;
 
     // Carregar perfil do usuário na tabela `usuarios`
-    const { data: perfil, error: perfilError } = await supabaseClient.
+    const { data: perfil, error: perfilError } = await supabaseClient
       .from('usuarios')
       .select('*')
       .eq('id_auth', user.id)
@@ -786,7 +786,7 @@ function mostrarCamposServico() {
   });
 </script>
 <script type="module">
-  import { supabaseClient. } from './supabaseClient.js';
+  import { supabaseClient } from './supabaseClient.js';
 
   // Cadastro individual (com Supabase Auth + tabela `usuarios`)
   document.getElementById('formCadastroIndividual').addEventListener('submit', async function(e) {
@@ -797,7 +797,7 @@ function mostrarCamposServico() {
     const emailFake = `${nome.toLowerCase().replace(/\s+/g, '')}@wecbrasil.com`;
 
     // Verifica se já existe nome de usuário
-    const { data: existente, error: erroBusca } = await supabaseClient.
+    const { data: existente, error: erroBusca } = await supabaseClient
       .from('usuarios')
       .select('id')
       .eq('nome', nome)
@@ -910,7 +910,7 @@ function mostrarCamposServico() {
 </script>
 <script>
   async function gerarRelatorio() {
-    const { data: registros, error } = await supabaseClient.
+    const { data: registros, error } = await supabaseClient
       .from('registros')
       .select('*');
 
@@ -1051,7 +1051,7 @@ document.getElementById('formUso').addEventListener('submit', async function(e) 
   if (!confirm('Deseja registrar este uso de serviço?')) return;
 
   // Envio para Supabase
-  const { error } = await supabaseClient.
+  const { error } = await supabaseClient
     .from('registros')
     .insert([registro]);
 
@@ -1079,7 +1079,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
   const fim = new Date(dataFinal);
   fim.setHours(23, 59, 59, 999);
 
-  const { data, error } = await supabaseClient.
+  const { data, error } = await supabaseClient
     .from('registros')
     .select('*')
     .eq('tipo', 'refeicoes');
