@@ -516,7 +516,7 @@ function mostrarCamposServico() {
   if (tipo === 'lavanderia') {
     detalhes.innerHTML = `
       <label>Data:</label>
-      <input type="date" class="form-control mb-2" id="dataLavanderia" value="${hoje}">
+      <input type="date" class="form-control mb-2" id="dataLavanderia">
       <label>Quantidade de lavagens:</label>
       <input type="number" class="form-control mb-2" id="qtdLavagens" min="0" value="">
       <label>Quantidade de secagens:</label>
@@ -525,7 +525,7 @@ function mostrarCamposServico() {
   } else if (tipo === 'carro') {
     detalhes.innerHTML = `
       <label>Data:</label>
-      <input type="date" class="form-control mb-2" id="dataCarro" value="${hoje}">
+      <input type="date" class="form-control mb-2" id="dataCarro">
       <label>Kilometragem inicial:</label>
       <input type="number" class="form-control mb-2" id="kmInicial" min="0" value="">
       <label>Kilometragem final:</label>
@@ -542,7 +542,7 @@ function mostrarCamposServico() {
   } else if (tipo === 'xerox') {
     detalhes.innerHTML = `
       <label>Data:</label>
-      <input type="date" class="form-control mb-2" id="dataXerox" value="${hoje}">
+      <input type="date" class="form-control mb-2" id="dataXerox">
       <label>Quantidade de cópias:</label>
       <input type="number" class="form-control mb-2" id="qtdXerox" min="1" value="">
     `;
@@ -1293,6 +1293,28 @@ async function gerarRelatorioRefeicoesPeriodo() {
     link.click();
     document.body.removeChild(link);
   }
+</script>
+<script>
+  // Gera data de hoje no formato yyyy-mm-dd (HTML) e aplica em todos os campos de data
+  const hoje = new Date();
+  const dataFormatada = hoje.toISOString().split('T')[0]; // yyyy-mm-dd
+
+  // Lista de todos os campos do tipo date que precisam ser preenchidos
+  const camposData = [
+    'dataRefeicao',
+    'dataHospedagem',
+    'dataXerox'
+  ];
+
+  // Define a data atual como valor inicial
+  camposData.forEach(id => {
+    const campo = document.getElementById(id);
+    if (campo) campo.value = dataFormatada;
+  });
+
+// Exibir no formato brasileiro (só no console)
+  const dataBr = new Intl.DateTimeFormat('pt-BR').format(hoje);
+  console.log("Data brasileira:", dataBr); // Exemplo: 03/08/2025
 </script>
 </body>
 </html>
