@@ -22,6 +22,14 @@
   <div class="container">
     <h1 class="mb-4">Registro de Serviços - WEC Brasil</h1>
 
+    <!-- Exibição do nome do usuário logado -->
+<p>Bem-vindo: <span id="usuarioLogado">Carregando...</span></p>
+
+<!-- Área visível apenas para administradores -->
+<div id="areaAdmin" style="display: none; margin-top: 20px;">
+  <h3>Painel do Administrador</h3>
+  <button id="botaoCadastro" style="display: none;">Cadastrar novo usuário</button>
+</div>
     <!-- Login -->
     <div class="card mb-4" id="loginCard">
       <div class="card-header">Login</div>
@@ -969,6 +977,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
 
 
 
