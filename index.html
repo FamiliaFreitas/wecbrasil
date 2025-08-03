@@ -129,37 +129,16 @@
     document.getElementById("loginCard").classList.remove("hidden");
   });
 
-  // Cadastro individual
-  document.getElementById("formCadastroIndividual").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const nome = document.getElementById("nomeCadastroIndividual").value.trim();
-    const senha = document.getElementById("senhaCadastroIndividual").value;
-    const email = `${nome.toLowerCase().replace(/\s+/g, '')}@wecbrasil.org`;
-
-    const { data, error } = await supabaseClient.auth.signUp({
-      email,
-      password: senha
-    });
-
-    if (error) {
-      alert("Erro ao cadastrar: " + error.message);
-    } else {
-      // Armazenar tipo de usuário padrão (usuario) na tabela
-      await supabaseClient.from("usuarios").insert([{ email, nome, tipo: "usuario" }]);
-      alert("Usuário cadastrado com sucesso!");
-      document.getElementById("cadastroIndividualCard").classList.add("hidden");
-      document.getElementById("loginCard").classList.remove("hidden");
-    }
-  });
-
   // Cadastro por admin
-  document.getElementById('btnCadastrarUsuario').addEventListener('click', async () => {
-  const email = document.getElementById('cadastroEmail').value;
-  const senha = document.getElementById('cadastroSenha').value;
-  const role = document.getElementById('cadastroRole').value;
+  document.getElementById('formMissionario').addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-  // 1. Cria o usuário no Supabase Auth
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+  const nome = document.getElementById('nomeMissionario').value.trim();
+  const senha = document.getElementById('senhaMissionario').value;
+  const tipo = document.getElementById('tipoUsuario').value;
+  const email = `${nome.toLowerCase().replace(/\s+/g, '')}@wecbrasil.org`;
+
+  const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
     email,
     password: senha,
   });
@@ -170,23 +149,22 @@
   }
 
   const user = signUpData.user;
-
   if (!user) {
     alert('Erro: usuário não retornado após cadastro.');
     return;
   }
 
-  // 2. Adiciona também na tabela "usuarios"
-  const { error: insertError } = await supabase
+  const { error: insertError } = await supabaseClient
     .from('usuarios')
-    .insert([{ id: user.id, email: user.email, role: role }]);
+    .insert([{ id_auth: user.id, email: email, nome: nome, tipo: tipo }]);
 
   if (insertError) {
     alert('Erro ao salvar na tabela usuarios: ' + insertError.message);
     return;
   }
 
-  alert('Usuário cadastrado com sucesso! Confirme o e-mail.');
+  alert('Usuário cadastrado com sucesso!');
+  document.getElementById('formMissionario').reset();
 });
 
   // Alterar senha
@@ -1152,22 +1130,6 @@ async function gerarRelatorioRefeicoesPeriodo() {
   whatsappBtn.style.display = 'inline-block';
 }
 </script>
-<script>
-  // Alternar exibição da senha
-  document.getElementById('toggleLoginSenha').addEventListener('click', function () {
-    const input = document.getElementById('loginSenha');
-    input.type = input.type === 'password' ? 'text' : 'password';
-    this.textContent = input.type === 'password' ? '👁️' : '🙈';
-  });
-
-  document.getElementById('toggleCadastroSenha').addEventListener('click', function () {
-    const input = document.getElementById('senhaCadastroIndividual');
-    input.type = input.type === 'password' ? 'text' : 'password';
-    this.textContent = input.type === 'password' ? '👁️' : '🙈';
-  });
-</script>
-
-
 <script>
   function baixarRelatorioPDF() {
     const texto = document.getElementById('relatorio').textContent;
