@@ -12,8 +12,7 @@
   </head>
 <body class="p-4">
   <div class="container">
-    <h1 class="mb-4">Registro de Serviços - WEC Brasil</h1>
-    
+    <h1 class="mb-4">Registro de Serviços - WEC Brasil</h1>   
 <script>
     const { createClient } = supabase;
     const supabase = createClient(
@@ -596,13 +595,7 @@ texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
   });
 </script>
 <script>
-  // 1. Inicializa o Supabase
-  const supabase = supabase.createClient(
-    'https://xqwubmknwvvonjzaecmk.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxd3VibWtud3Z2b25qemFlY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwODY2OTQsImV4cCI6MjA2OTY2MjY5NH0._42N0mZO4NcLPcCG9YMB0_hkMTLF5tCdlPZYagN3vIk'
-  );
-
-  // 2. Cadastro Individual (tipo fixo: 'usuario')
+    // 2. Cadastro Individual (tipo fixo: 'usuario')
   document.getElementById('formCadastroIndividual').addEventListener('submit', async function(e) {
     e.preventDefault();
     const nome = document.getElementById('nomeCadastroIndividual').value;
@@ -740,6 +733,7 @@ texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
 </script>
 </body>
 </html>
+
 
 
 
