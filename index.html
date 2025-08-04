@@ -622,98 +622,112 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 </script>
 <script>
-  async function prepararRegistro() {
-    const tipo = document.getElementById('tipoServico').value;
-    const usuario = usuarioAtual.nome;
-    const hoje = new Date().toISOString().split('T')[0];
-
-    const registro = { tipo, usuario, data: hoje };
-
-    // Validação e preenchimento por tipo
-    if (tipo === 'lavanderia') {
-      const lavagens = document.getElementById('qtdLavagens').value;
-      const secagens = document.getElementById('qtdSecagens').value;
-      const data = document.getElementById('dataLavanderia').value;
-
-      if (!lavagens || !secagens) return alert('Preencha a quantidade de lavagens e secagens.');
-      if (!data) return alert('Informe a data.');
-      
-      registro.qtdLavagens = parseInt(lavagens);
-      registro.qtdSecagens = parseInt(secagens);
-      registro.data = data;
-
-    } else if (tipo === 'carro') {
-      const kmInicial = document.getElementById('kmInicial').value;
-      const kmFinal = document.getElementById('kmFinal').value;
-      const qtdTag = document.getElementById('qtdTag').value;
-      const uso = document.getElementById('usoCarro').value;
-      const data = document.getElementById('dataCarro').value;
-
-      if (!kmInicial || !kmFinal || isNaN(kmInicial) || isNaN(kmFinal)) {
-        return alert('Informe os km inicial e final.');
-      }
-      if (!data) return alert('Informe a data.');
-
-      registro.kmInicial = parseInt(kmInicial);
-      registro.kmFinal = parseInt(kmFinal);
-      registro.qtdTag = parseInt(qtdTag) || 0;
-      registro.uso = uso;
-      registro.data = data;
-
-      if (uso === 'departamento') {
-        const departamento = document.getElementById('departamento').value;
-        if (!departamento) return alert('Informe o nome do departamento.');
-        registro.departamento = departamento;
-      }
-
-    } else if (tipo === 'xerox') {
-      const qtd = document.getElementById('qtdXerox').value;
-      const data = document.getElementById('dataXerox').value;
-
-      if (!qtd) return alert('Informe a quantidade de cópias.');
-      if (!data) return alert('Informe a data.');
-
-      registro.qtd = parseInt(qtd);
-      registro.data = data;
-
-    } else if (tipo === 'refeicoes') {
-      const dias = [];
-      let erro = false;
-
-      document.querySelectorAll('.linha-dia').forEach(el => {
-        const data = el.querySelector('.data-refeicao').value;
-        const qtd = el.querySelector('.qtd-refeicao').value;
-        if (!data || !qtd) erro = true;
-        dias.push({ data, qtd: parseInt(qtd) });
-      });
-
-      if (erro || dias.length === 0) return alert('Preencha todos os dias e quantidades de refeições.');
-      registro.dias = dias;
-
-    } else if (tipo === 'hospedagem') {
-      const entrada = document.getElementById('entrada').value;
-      const saida = document.getElementById('saida').value;
-
-      if (!entrada || !saida) return alert('Preencha as datas de entrada e saída.');
-      if (saida < entrada) return alert('A data de saída não pode ser anterior à entrada.');
-
-      registro.entrada = entrada;
-      registro.saida = saida;
-    }
-
-    // Envia para o Supabase
-    const { error } = await supabase.from('registros').insert([registro]);
-
-    if (error) {
-      console.error('Erro ao salvar registro:', error);
-      alert('Erro ao salvar registro. Verifique os dados e tente novamente.');
-    } else {
-      alert('Registro salvo com sucesso!');
-      document.getElementById('formUso').reset();
-      document.getElementById('campoDepartamento').innerHTML = ''; // limpa campo extra
-    }
+ async function prepararRegistro() {
+  // 🧠 Recuperar o usuário logado
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    alert('Usuário não autenticado');
+    return;
   }
 
+  const tipo = document.getElementById('tipoServico').value;
+  const hoje = new Date().toISOString().split('T')[0];
+
+  const registro = {
+    user_id: user.id, // ESSENCIAL para RLS permitir o insert
+    tipo,
+    data: hoje
+  };
+
+  // Se quiser manter o nome para exibição futura (opcional)
+  if (usuarioAtual?.nome) {
+    registro.nome = usuarioAtual.nome;
+  }
+
+  // Resto do seu código continua normalmente
+  if (tipo === 'lavanderia') {
+    const lavagens = document.getElementById('qtdLavagens').value;
+    const secagens = document.getElementById('qtdSecagens').value;
+    const data = document.getElementById('dataLavanderia').value;
+
+    if (!lavagens || !secagens) return alert('Preencha a quantidade de lavagens e secagens.');
+    if (!data) return alert('Informe a data.');
+    
+    registro.qtdlavagens = parseInt(lavagens);
+    registro.qtdsecagens = parseInt(secagens);
+    registro.data = data;
+
+  } else if (tipo === 'carro') {
+    const kmInicial = document.getElementById('kmInicial').value;
+    const kmFinal = document.getElementById('kmFinal').value;
+    const qtdTag = document.getElementById('qtdTag').value;
+    const uso = document.getElementById('usoCarro').value;
+    const data = document.getElementById('dataCarro').value;
+
+    if (!kmInicial || !kmFinal || isNaN(kmInicial) || isNaN(kmFinal)) {
+      return alert('Informe os km inicial e final.');
+    }
+    if (!data) return alert('Informe a data.');
+
+    registro.kminicial = parseInt(kmInicial);
+    registro.kmfinal = parseInt(kmFinal);
+    registro.qtdtag = parseInt(qtdTag) || 0;
+    registro.uso = uso;
+    registro.data = data;
+
+    if (uso === 'departamento') {
+      const departamento = document.getElementById('departamento').value;
+      if (!departamento) return alert('Informe o nome do departamento.');
+      registro.departamento = departamento;
+    }
+
+  } else if (tipo === 'xerox') {
+    const qtd = document.getElementById('qtdXerox').value;
+    const data = document.getElementById('dataXerox').value;
+
+    if (!qtd) return alert('Informe a quantidade de cópias.');
+    if (!data) return alert('Informe a data.');
+
+    registro.qtd = parseInt(qtd);
+    registro.data = data;
+
+  } else if (tipo === 'refeicoes') {
+    const dias = [];
+    let erro = false;
+
+    document.querySelectorAll('.linha-dia').forEach(el => {
+      const data = el.querySelector('.data-refeicao').value;
+      const qtd = el.querySelector('.qtd-refeicao').value;
+      if (!data || !qtd) erro = true;
+      dias.push({ data, qtd: parseInt(qtd) });
+    });
+
+    if (erro || dias.length === 0) return alert('Preencha todos os dias e quantidades de refeições.');
+    registro.dias = dias;
+
+  } else if (tipo === 'hospedagem') {
+    const entrada = document.getElementById('entrada').value;
+    const saida = document.getElementById('saida').value;
+
+    if (!entrada || !saida) return alert('Preencha as datas de entrada e saída.');
+    if (saida < entrada) return alert('A data de saída não pode ser anterior à entrada.');
+
+    registro.entrada = entrada;
+    registro.saida = saida;
+  }
+
+  // 🟢 Insere no Supabase
+  const { error } = await supabase.from('registros').insert([registro]);
+
+  if (error) {
+    console.error('Erro ao salvar registro:', error);
+    alert('Erro ao salvar registro. Verifique os dados e tente novamente.');
+  } else {
+    alert('Registro salvo com sucesso!');
+    document.getElementById('formUso').reset();
+    document.getElementById('campoDepartamento')?.innerHTML = '';
+  }
+}
   document.getElementById('formUso').addEventListener('submit', function (e) {
     e.preventDefault();
     prepararRegistro();
@@ -827,6 +841,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
