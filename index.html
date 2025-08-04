@@ -132,7 +132,17 @@
 
   window.usuarioAtual = perfil;
   alert(`Bem-vindo, ${perfil.nome}!`);
+// Esconde a tela de login e de cadastro individual
+document.getElementById("loginCard").classList.add("hidden");
+document.getElementById("cadastroIndividualCard").classList.add("hidden");
 
+// Mostra a área de alteração de senha (comum a todos os usuários)
+document.getElementById("alterarSenhaCard").classList.remove("hidden");
+
+// Se for admin, mostra a área de cadastro de usuários
+if (perfil.admin) {
+  document.getElementById("cadastroCard").classList.remove("hidden");
+}
 });
     </script>
   <script>
@@ -1177,6 +1187,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
 
 
 
