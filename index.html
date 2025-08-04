@@ -96,7 +96,8 @@
 <script>
 <script>
       // Login com Supabase
-      document.getElementById("formLogin").addEventListener("submit", async (e) => {
+  document.addEventListener("DOMContentLoaded", () => {   
+  document.getElementById("formLogin").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const email = document.getElementById("emailLogin").value.trim().toLowerCase();
@@ -136,7 +137,8 @@
     </script>
   <script>
   // Cadastro individual (para novos usuários comuns)
-  document.getElementById("formCadastroIndividual").addEventListener("submit", async (e) => {
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("formCadastroIndividual").addEventListener("submit", async (e) => {
     e.preventDefault(); // ← ESSENCIAL: evita recarregar a página
 
     const nome = document.getElementById("nomeCadastroIndividual").value.trim();
@@ -1175,6 +1177,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
 
 
 
