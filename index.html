@@ -8,18 +8,10 @@
   <style>
     .hidden { display: none; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
 <body class="p-4">
   <div class="container">
     <h1 class="mb-4">Registro de Serviços - WEC Brasil</h1>   
-<script>
-    const { createClient } = supabase;
-    const supabase = createClient(
-      'https://xqwubmknwvvonjzaecmk.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxd3VibWtud3Z2b25qemFlY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwODY2OTQsImV4cCI6MjA2OTY2MjY5NH0._42N0mZO4NcLPcCG9YMB0_hkMTLF5tCdlPZYagN3vIk'
-    );
-  </script>
     <!-- Login -->
     <div class="card mb-4" id="loginCard">
       <div class="card-header">Login</div>
@@ -154,11 +146,69 @@
      </div>
   </div>
   <script>
-    function logout() {
-      localStorage.removeItem('usuarioLogado');
-      location.reload();
+  <!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Inicialização segura do Supabase
+  const { createClient } = window.supabase;
+  const supabase = createClient(
+    'https://xqwubmknwvvonjzaecmk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxd3VibWtud3Z2b25qemFlY21rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwODY2OTQsImV4cCI6MjA2OTY2MjY5NH0._42N0mZO4NcLPcCG9YMB0_hkMTLF5tCdlPZYagN3vIk'
+  );
+
+  // Detecta usuário logado e mostra os cards certos
+  async function verificarLogin() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (!session) {
+      document.getElementById('loginCard').classList.remove('hidden');
+      return;
     }
 
+    const user = session.user;
+    const { data: perfil, error: perfilError } = await supabase
+      .from('perfis')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (perfilError || !perfil) {
+      alert('Erro ao carregar perfil: ' + (perfilError?.message || 'Perfil não encontrado.'));
+      await supabase.auth.signOut();
+      return location.reload();
+    }
+
+    const usuarioLogado = {
+      id: user.id,
+      email: user.email,
+      tipo: perfil.tipo,
+      nome: perfil.nome
+    };
+
+    localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado));
+    document.getElementById('usuarioLogado').textContent = usuarioLogado.nome;
+    document.getElementById('btnLogout')?.classList.remove('hidden');
+
+    if (usuarioLogado.tipo === 'admin') {
+      document.getElementById('adminCard')?.classList.remove('hidden');
+      document.getElementById('relatorioCard')?.classList.remove('hidden');
+      document.getElementById('cadastroCard')?.classList.remove('hidden');
+      document.getElementById('gerenciarUsuariosCard')?.classList.remove('hidden');
+    } else {
+      document.getElementById('userCard')?.classList.remove('hidden');
+    }
+
+    document.getElementById('registroCard')?.classList.remove('hidden');
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    localStorage.removeItem('usuarioLogado');
+    location.reload();
+  }
+
+  window.addEventListener('DOMContentLoaded', verificarLogin);
+</script>
+      
     function mostrarCamposServico() {
   const tipo = document.getElementById('tipoServico').value;
   const detalhes = document.getElementById('detalhesServico');
@@ -594,145 +644,9 @@ texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
     carregarListaUsuarios();
   });
 </script>
-<script>
-    // 2. Cadastro Individual (tipo fixo: 'usuario')
-  document.getElementById('formCadastroIndividual').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const nome = document.getElementById('nomeCadastroIndividual').value;
-    const senha = document.getElementById('senhaCadastroIndividual').value;
-
-    const { data, error } = await supabase.auth.signUp({ email: nome, password: senha });
-
-    if (error) return alert('Erro ao cadastrar: ' + error.message);
-
-    const user = data.user;
-    if (user) {
-      const { error: insertError } = await supabase.from('perfis').insert({
-        id: user.id,
-        nome: nome,
-        tipo: 'usuario'
-      });
-
-      if (insertError) {
-        alert('Usuário criado, mas erro ao salvar perfil: ' + insertError.message);
-      } else {
-        alert('Usuário cadastrado! Verifique seu e-mail e depois faça login.');
-      }
-    }
-
-    document.getElementById('formCadastroIndividual').reset();
-    document.getElementById('cadastroIndividualCard').classList.add('hidden');
-    document.getElementById('loginCard').classList.remove('hidden');
-  });
-
-  // 3. Login
-  document.getElementById('formLogin').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const nome = document.getElementById('loginUsuario').value;
-    const senha = document.getElementById('loginSenha').value;
-
-    const { data: authData, error: loginError } = await supabase.auth.signInWithPassword({ email: nome, password: senha });
-
-    if (loginError) return alert('Usuário ou senha inválidos: ' + loginError.message);
-
-    const user = authData.user;
-    const { data: perfil, error: perfilError } = await supabase.from('perfis').select('*').eq('id', user.id).single();
-
-    if (perfilError || !perfil) return alert('Erro ao carregar perfil: ' + (perfilError?.message || 'Perfil não encontrado.'));
-
-    const usuarioLogado = {
-      id: user.id,
-      email: user.email,
-      tipo: perfil.tipo,
-      nome: perfil.nome
-    };
-
-    localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado));
-    location.reload();
-  });
-
-  // 4. Detectar se está logado e mostrar cards
-  const usuarioAtual = JSON.parse(localStorage.getItem('usuarioLogado'));
-
-  if (usuarioAtual) {
-    document.querySelectorAll('.card').forEach(el => el.classList.add('hidden'));
-
-    document.getElementById('registroCard').classList.remove('hidden');
-    document.getElementById('usuarioLogado').textContent = usuarioAtual.nome;
-
-    // Mostrar partes de admin
-    if (usuarioAtual.tipo === 'admin') {
-      document.getElementById('cadastroCard').classList.remove('hidden');
-      document.getElementById('relatorioCard').classList.remove('hidden');
-      document.getElementById('refeicoesCard').classList.remove('hidden');
-      document.getElementById('gerenciarUsuariosCard').classList.remove('hidden');
-    }
-
-    // Mostra botão logout (pode estar em registroCard)
-    const btnLogout = document.querySelector('#registroCard button.btn-outline-danger');
-    if (btnLogout) btnLogout.classList.remove('hidden');
-
-  } else {
-    document.querySelectorAll('.card').forEach(el => el.classList.add('hidden'));
-    document.getElementById('loginCard').classList.remove('hidden');
-  }
-
-  // 5. Cadastro de usuários (via admin)
-  document.getElementById('formMissionario').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    if (!usuarioAtual || usuarioAtual.tipo !== 'admin') {
-      return alert('Apenas administradores podem cadastrar novos usuários.');
-    }
-
-    const nome = document.getElementById('nomeMissionario').value;
-    const senha = document.getElementById('senhaMissionario').value;
-    const tipo = document.getElementById('tipoUsuario').value;
-
-    const { data, error } = await supabase.auth.signUp({ email: nome, password: senha });
-
-    if (error) return alert('Erro ao cadastrar: ' + error.message);
-
-    const user = data.user;
-    if (user) {
-      const { error: insertError } = await supabase.from('perfis').insert({
-        id: user.id,
-        nome,
-        tipo
-      });
-
-      if (insertError) {
-        alert('Usuário criado, mas erro ao salvar perfil: ' + insertError.message);
-      } else {
-        alert(`Usuário ${tipo} cadastrado com sucesso!`);
-        document.getElementById('formMissionario').reset();
-      }
-    }
-  });
-
-  // 6. Logout
-  const btnLogout = document.querySelector('#registroCard button.btn-outline-danger');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', async function () {
-      await supabase.auth.signOut();
-      localStorage.removeItem('usuarioLogado');
-      location.reload();
-    });
-  }
-
-  // 7. Alternar telas de login/cadastro individual
-  document.getElementById('btnMostrarCadastro').addEventListener('click', () => {
-    document.getElementById('loginCard').classList.add('hidden');
-    document.getElementById('cadastroIndividualCard').classList.remove('hidden');
-  });
-
-  document.getElementById('btnVoltarLogin').addEventListener('click', () => {
-    document.getElementById('cadastroIndividualCard').classList.add('hidden');
-    document.getElementById('loginCard').classList.remove('hidden');
-  });
-</script>
 </body>
 </html>
+
 
 
 
