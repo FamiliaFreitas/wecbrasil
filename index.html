@@ -145,7 +145,6 @@
        <ul id="listaUsuarios" class="list-group"></ul>
      </div>
   </div>
-  <script>
   <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -209,7 +208,8 @@
   window.addEventListener('DOMContentLoaded', verificarLogin);
 </script>
       
-    function mostrarCamposServico() {
+<script>
+function mostrarCamposServico() {
   const tipo = document.getElementById('tipoServico').value;
   const detalhes = document.getElementById('detalhesServico');
   detalhes.innerHTML = '';
@@ -221,31 +221,33 @@
       <label>Data:</label>
       <input type="date" class="form-control mb-2" id="dataLavanderia" value="${hoje}">
       <label>Quantidade de lavagens:</label>
-      <input type="number" class="form-control mb-2" id="qtdLavagens" min="0" value="">
+      <input type="number" class="form-control mb-2" id="qtdLavagens" min="0">
       <label>Quantidade de secagens:</label>
-      <input type="number" class="form-control mb-2" id="qtdSecagens" min="0" value="">
+      <input type="number" class="form-control mb-2" id="qtdSecagens" min="0">
     `;
   } else if (tipo === 'carro') {
-    detalhes.innerHTML = `
-      <label>Data:</label>
-      <input type="date" class="form-control mb-2" id="dataCarro" value="${hoje}">
-      <label>Km rodados:</label>
-      <input type="number" class="form-control mb-2" id="kmRodado" min="1" value="">
-      <label>Uso:</label>
-      <select class="form-select mb-2" id="usoCarro" onchange="mostrarCampoDepartamento()">
-        <option value="pessoal">Pessoal</option>
-        <option value="departamento">Departamento</option>
-      </select>
-      <div id="campoDepartamento"></div>
-      <label>Quantidade de uso da TAG:</label>
-      <input type="number" class="form-control mb-2" id="qtdTag" min="0" value="">
-    `;
+  detalhes.innerHTML = `
+    <label>Data:</label>
+    <input type="date" class="form-control mb-2" id="dataCarro" value="${hoje}">
+    <label>KM Inicial:</label>
+    <input type="number" class="form-control mb-2" id="kmInicial" min="0">
+    <label>KM Final:</label>
+    <input type="number" class="form-control mb-2" id="kmFinal" min="0">
+    <label>Uso:</label>
+    <select class="form-select mb-2" id="usoCarro" onchange="mostrarCampoDepartamento()">
+      <option value="pessoal">Pessoal</option>
+      <option value="departamento">Departamento</option>
+    </select>
+    <div id="campoDepartamento"></div>
+    <label>Quantidade de uso da TAG:</label>
+    <input type="number" class="form-control mb-2" id="qtdTag" min="0">
+  `;
   } else if (tipo === 'xerox') {
     detalhes.innerHTML = `
       <label>Data:</label>
       <input type="date" class="form-control mb-2" id="dataXerox" value="${hoje}">
       <label>Quantidade de cópias:</label>
-      <input type="number" class="form-control mb-2" id="qtdXerox" min="1" value="">
+      <input type="number" class="form-control mb-2" id="qtdXerox" min="1">
     `;
   } else if (tipo === 'refeicoes') {
     detalhes.innerHTML = `
@@ -263,7 +265,8 @@
     `;
   }
 }
-
+</script>
+<script>
     function adicionarDiaRefeicao() {
   const diasContainer = document.getElementById('diasRefeicoes');
   const index = diasContainer.children.length;
@@ -291,88 +294,140 @@
     }
   </script>
 <script>
-  let usuarioAtual = JSON.parse(localStorage.getItem('usuarioLogado')) || null;
+async function carregarUsuario() {
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [
-    { nome: 'admin', senha: 'admin', tipo: 'admin' }
-  ];
-  localStorage.setItem('usuarios', JSON.stringify(usuarios));
-
-  function carregarUsuario() {
-    if (usuarioAtual) {
-      document.getElementById('usuarioLogado').textContent = usuarioAtual.nome;
-      document.getElementById('loginCard').classList.add('hidden');
-      document.getElementById('cadastroIndividualCard').classList.add('hidden');
-      document.getElementById('registroCard').classList.remove('hidden');
-      if (usuarioAtual.tipo === 'admin') {
-        document.getElementById('relatorioCard').classList.remove('hidden');
-        document.getElementById('cadastroCard').classList.remove('hidden');
-        document.getElementById('refeicoesCard').classList.remove('hidden');
-      document.getElementById('gerenciarUsuariosCard').classList.remove('hidden');
-carregarListaUsuarios();
-      }
-    }
+  if (error || !user) {
+    console.warn("Usuário não autenticado");
+    return;
   }
-function carregarListaUsuarios() {
+
+  const { data: perfil, error: erroPerfil } = await supabase
+    .from('usuarios')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (erroPerfil || !perfil) {
+    alert("Não foi possível carregar os dados do usuário.");
+    return;
+  }
+
+  // Atualiza visualmente
+  document.getElementById('usuarioLogado').textContent = perfil.nome || user.email;
+
+  document.getElementById('loginCard').classList.add('hidden');
+  document.getElementById('cadastroIndividualCard').classList.add('hidden');
+  document.getElementById('registroCard').classList.remove('hidden');
+
+  if (perfil.tipo === 'admin') {
+    document.getElementById('relatorioCard').classList.remove('hidden');
+    document.getElementById('cadastroCard').classList.remove('hidden');
+    document.getElementById('refeicoesCard').classList.remove('hidden');
+    document.getElementById('gerenciarUsuariosCard').classList.remove('hidden');
+    carregarListaUsuarios(); // essa função você já deve ter
+  }
+}
+async function carregarListaUsuarios() {
   const lista = document.getElementById('listaUsuarios');
   lista.innerHTML = '';
 
-  usuarios.forEach((u, index) => {
-    if (u.nome === usuarioAtual.nome) return; // Não permite excluir a si mesmo
+  const { data: userData } = await supabase.auth.getUser();
+  const idAtual = userData.user.id;
+
+  const { data: usuarios, error } = await supabase
+    .from('usuarios')
+    .select('*');
+
+  if (error) {
+    alert('Erro ao carregar usuários: ' + error.message);
+    return;
+  }
+
+  usuarios.forEach((u) => {
+    if (u.id === idAtual) return; // Não permite excluir a si mesmo
 
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
     li.innerHTML = `
       <span>${u.nome} (${u.tipo})</span>
-      <button class="btn btn-sm btn-danger" onclick="excluirUsuario(${index})">Excluir</button>
+      <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.id}')">Excluir</button>
     `;
     lista.appendChild(li);
   });
 }
-function excluirUsuario(index) {
+
+async function excluirUsuario(id) {
   if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
-  usuarios.splice(index, 1);
-  localStorage.setItem('usuarios', JSON.stringify(usuarios));
-  carregarListaUsuarios();
+  const { error } = await supabase.from('usuarios').delete().eq('id', id);
+  if (error) {
+    alert('Erro ao excluir usuário: ' + error.message);
+    return;
+  }
+
+  alert('Usuário excluído com sucesso.');
+  carregarListaUsuarios(); // Atualiza a lista
 }
-  function logout() {
-    localStorage.removeItem('usuarioLogado');
-    location.reload();
+// Logout com Supabase
+async function logout() {
+  await supabase.auth.signOut();
+  localStorage.removeItem('usuarioLogado');
+  location.reload();
+}
+
+// Mostrar card de alteração de senha
+function mostrarAlterarSenha() {
+  document.getElementById('alterarSenhaCard').classList.remove('hidden');
+}
+
+// Alternar entre login e cadastro
+document.getElementById('btnMostrarCadastro').addEventListener('click', function () {
+  document.getElementById('loginCard').classList.add('hidden');
+  document.getElementById('cadastroIndividualCard').classList.remove('hidden');
+});
+
+document.getElementById('btnVoltarLogin').addEventListener('click', function () {
+  document.getElementById('cadastroIndividualCard').classList.add('hidden');
+  document.getElementById('loginCard').classList.remove('hidden');
+});
+
+// Alterar senha com Supabase
+document.getElementById('formAlterarSenha').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const senhaAtual = document.getElementById('senhaAtual').value;
+  const novaSenha = document.getElementById('novaSenha').value;
+
+  // Tenta login para confirmar senha atual
+  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
+  const { data: authData, error: loginError } = await supabase.auth.signInWithPassword({
+    email: usuario.email,
+    password: senhaAtual,
+  });
+
+  if (loginError) {
+    alert('Senha atual incorreta.');
+    return;
   }
 
-  function mostrarAlterarSenha() {
-    document.getElementById('alterarSenhaCard').classList.remove('hidden');
+  // Atualiza senha no Supabase
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: novaSenha,
+  });
+
+  if (updateError) {
+    alert('Erro ao alterar senha: ' + updateError.message);
+    return;
   }
 
-  // Botões para alternar entre login e cadastro
-  document.getElementById('btnMostrarCadastro').addEventListener('click', function() {
-    document.getElementById('loginCard').classList.add('hidden');
-    document.getElementById('cadastroIndividualCard').classList.remove('hidden');
-  });
+  alert('Senha alterada com sucesso.');
+  document.getElementById('formAlterarSenha').reset();
+  document.getElementById('alterarSenhaCard').classList.add('hidden');
+});
 
-  document.getElementById('btnVoltarLogin').addEventListener('click', function() {
-    document.getElementById('cadastroIndividualCard').classList.add('hidden');
-    document.getElementById('loginCard').classList.remove('hidden');
-  });
-
-  // Alterar senha
-  document.getElementById('formAlterarSenha').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const senhaAtual = document.getElementById('senhaAtual').value;
-    const novaSenha = document.getElementById('novaSenha').value;
-    if (senhaAtual !== usuarioAtual.senha) return alert('Senha atual incorreta');
-    const index = usuarios.findIndex(u => u.nome === usuarioAtual.nome);
-    usuarios[index].senha = novaSenha;
-    usuarioAtual.senha = novaSenha;
-    localStorage.setItem('usuarios', JSON.stringify(usuarios));
-    localStorage.setItem('usuarioLogado', JSON.stringify(usuarioAtual));
-    alert('Senha alterada com sucesso.');
-    document.getElementById('formAlterarSenha').reset();
-    document.getElementById('alterarSenhaCard').classList.add('hidden');
-  });
-
-  carregarUsuario();
+// Chamado no final da página
+carregarUsuario();
 </script>
 <script>
   function mostrarCampoDepartamento() {
@@ -389,256 +444,333 @@ function excluirUsuario(index) {
   }
 </script>
 <script>
-  function gerarRelatorio() {
-  const registros = JSON.parse(localStorage.getItem('registros') || '[]');
+  async function gerarRelatorio() {
+    const dataInicial = document.getElementById('dataInicial').value;
+    const dataFinal = document.getElementById('dataFinal').value;
 
-  const dataInicial = document.getElementById('dataInicial').value;
-  const dataFinal = document.getElementById('dataFinal').value;
+    const inicio = dataInicial ? new Date(dataInicial) : null;
+    const fim = dataFinal ? new Date(dataFinal) : null;
 
-  let inicio = dataInicial ? new Date(dataInicial) : null;
-  let fim = dataFinal ? new Date(dataFinal) : null;
+    let { data: registros, error } = await supabase
+      .from('registros')
+      .select('*')
+      .gte('data', dataInicial || '1900-01-01')
+      .lte('data', dataFinal || '2999-12-31');
 
-  const filtrados = registros.filter(reg => {
-    const data = new Date(reg.data || reg.entrada); // usa reg.entrada em caso de hospedagem
-    if (inicio && data < inicio) return false;
-    if (fim && data > fim) return false;
-    return true;
-  });
-
-  if (filtrados.length === 0) {
-    document.getElementById('relatorio').textContent = 'Nenhum registro encontrado no período selecionado.';
-    return;
-  }
-
-  const resumo = {};
-  filtrados.forEach(reg => {
-    const nome = reg.usuario;
-    if (!resumo[nome]) {
-      resumo[nome] = {
-        lavanderia: 0,
-        carroPessoal: 0,
-        carroDepartamento: {},
-        carroTag: 0,
-        carroTagPorDepartamento: {},
-        xerox: 0,
-        refeicoes: 0,
-        hospedagemDias: 0
-      };
-    }
-
-    switch (reg.tipo) {
-      case 'lavanderia':
-        resumo[nome].lavanderia += parseInt(reg.qtdLavagens || 0);
-        break;
-      case 'carro':
-        const qtdTag = parseInt(reg.qtdTag || 0);
-        if (reg.uso === 'departamento') {
-          const depto = reg.departamento || 'Não especificado';
-          if (!resumo[nome].carroDepartamento[depto]) resumo[nome].carroDepartamento[depto] = 0;
-          resumo[nome].carroDepartamento[depto] += parseInt(reg.km || 0);
-          if (!resumo[nome].carroTagPorDepartamento[depto]) resumo[nome].carroTagPorDepartamento[depto] = 0;
-          resumo[nome].carroTagPorDepartamento[depto] += qtdTag;
-       }  else {
-          resumo[nome].carroPessoal += parseInt(reg.km || 0);
-          resumo[nome].carroTag += qtdTag;
-        }
-        break;
-      case 'xerox':
-        resumo[nome].xerox += parseInt(reg.qtd || 0);
-        break;
-      case 'refeicoes':
-        reg.dias?.forEach(dia => {
-          const data = new Date(dia.data);
-          if ((inicio && data < inicio) || (fim && data > fim)) return;
-          resumo[nome].refeicoes += parseInt(dia.qtd || 0);
-        });
-        break;
-      case 'hospedagem':
-        const entrada = new Date(reg.entrada);
-        const saida = new Date(reg.saida);
-        if ((inicio && saida < inicio) || (fim && entrada > fim)) return;
-        const dias = Math.ceil((saida - entrada) / (1000 * 60 * 60 * 24));
-        if (dias > 0) resumo[nome].hospedagemDias += dias;
-        break;
-    }
-  });
-
-  let texto = '';
-  for (let nome in resumo) {
-    texto += `Usuário: ${nome}\n`;
-    texto += `- Lavanderia: ${resumo[nome].lavanderia} lavagens\n`;
-    texto += `- Uso da TAG: ${resumo[nome].carroTag} usos\n`;
-    const tagsDepto = resumo[nome].carroTagPorDepartamento;
-    if (Object.keys(tagsDepto).length > 0) {
-      texto += `- TAG por departamento:\n`;
-      for (let depto in tagsDepto) {
-        texto += `    • ${depto}: ${tagsDepto[depto]} usos\n`;
-      }
-    }
-    texto += `- Carro (uso pessoal): ${resumo[nome].carroPessoal} km\n`;
-    texto += `- Carro (por departamento):\n`;
-    for (let depto in resumo[nome].carroDepartamento) {
-      texto += `    • ${depto}: ${resumo[nome].carroDepartamento[depto]} km\n`;
-    }
-    texto += `- Xerox: ${resumo[nome].xerox} cópias\n`;
-    texto += `- Refeições: ${resumo[nome].refeicoes} refeições\n`;
-    texto += `- Hospedagem: ${resumo[nome].hospedagemDias} dias\n\n`;
-  }
-  document.getElementById('relatorio').textContent = texto;
-}
-document.getElementById('formUso').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  const tipo = document.getElementById('tipoServico').value;
-  if (!tipo) return alert('Selecione um tipo de serviço.');
-
-  const usuario = usuarioAtual.nome;
-  const registros = JSON.parse(localStorage.getItem('registros') || '[]');
-  const hoje = new Date().toISOString().split('T')[0];
-  const registro = { tipo, usuario, data: hoje };
-
-  // Validação e preenchimento por tipo
-  if (tipo === 'lavanderia') {
-    const lavagens = document.getElementById('qtdLavagens').value;
-    const secagens = document.getElementById('qtdSecagens').value;
-    if (!lavagens || !secagens) return alert('Preencha a quantidade de lavagens e secagens.');
-    registro.qtdLavagens = parseInt(lavagens);
-    registro.qtdSecagens = parseInt(secagens);
-    registro.data = document.getElementById('dataLavanderia').value;
-  } else if (tipo === 'carro') {
-    const km = document.getElementById('kmRodado').value;
-    const qtdTag = document.getElementById('qtdTag').value;
-    if (!km) return alert('Informe os km rodados.');
-    registro.km = parseInt(km);
-    registro.qtdTag = parseInt(qtdTag) || 0;
-    registro.uso = document.getElementById('usoCarro').value;
-    registro.data = document.getElementById('dataCarro').value;
-    if (registro.uso === 'departamento') {
-      const departamento = document.getElementById('departamento').value;
-      if (!departamento) return alert('Informe o nome do departamento.');
-      registro.departamento = departamento;
-    }
-  } else if (tipo === 'xerox') {
-    const qtd = document.getElementById('qtdXerox').value;
-    if (!qtd) return alert('Informe a quantidade de cópias.');
-    registro.qtd = parseInt(qtd);
-    registro.data = document.getElementById('dataXerox').value;
-  } else if (tipo === 'refeicoes') {
-    const dias = [];
-    let erro = false;
-    document.querySelectorAll('.linha-dia').forEach(el => {
-      const data = el.querySelector('.data-refeicao').value;
-      const qtd = el.querySelector('.qtd-refeicao').value;
-      if (!data || !qtd) erro = true;
-      dias.push({ data, qtd: parseInt(qtd) });
-    });
-    if (erro || dias.length === 0) return alert('Preencha todos os dias e quantidades de refeições.');
-    registro.dias = dias;
-  } else if (tipo === 'hospedagem') {
-    const entrada = document.getElementById('entrada').value;
-    const saida = document.getElementById('saida').value;
-    if (!entrada || !saida) return alert('Preencha as datas de entrada e saída.');
-    if (saida < entrada) return alert('A data de saída não pode ser anterior à entrada.');
-    registro.entrada = entrada;
-    registro.saida = saida;
-  }
-
-  // ✅ Confirmação antes de registrar
-  if (!confirm('Deseja registrar este uso de serviço?')) return;
-
-  registros.push(registro);
-  localStorage.setItem('registros', JSON.stringify(registros));
-
-  alert('Registro salvo com sucesso!');
-  document.getElementById('formUso').reset();
-  document.getElementById('detalhesServico').innerHTML = '';
-});
-function gerarRelatorioRefeicoesPeriodo() {
-  const registros = JSON.parse(localStorage.getItem('registros') || '[]');
-
-  if (registros.length === 0) {
-    alert('Nenhum registro de refeições encontrado.');
-    return;
-  }
-
-  const dataInicial = document.getElementById('dataRefInicio').value;
-  const dataFinal = document.getElementById('dataRefFim').value;
-
-  if (!dataInicial || !dataFinal) {
-    alert('Selecione um período válido.');
-    return;
-  }
-
-  const inicio = new Date(dataInicial);
-  const fim = new Date(dataFinal);
-  fim.setHours(23, 59, 59, 999); // incluir o último dia inteiro
-
-  const resumo = {};
-
-  registros.forEach(reg => {
-    if (reg.tipo === 'refeicoes' && Array.isArray(reg.dias)) {
-      reg.dias.forEach(dia => {
-        const data = new Date(dia.data);
-        if (data >= inicio && data <= fim) {
-          const diaStr = data.toISOString().split('T')[0];
-          if (!resumo[diaStr]) resumo[diaStr] = 0;
-          resumo[diaStr] += parseInt(dia.qtd || 0);
-        }
-      });
-    }
-  });
-
-  const formatarData = str => {
-  const [ano, mes, dia] = str.split('-');
-  return `${dia}/${mes}/${ano}`;
-};
-let texto = `🗓️ Refeições agendadas por dia (${formatarData(dataInicial)} a ${formatarData(dataFinal)}):\n\n`;
-  if (Object.keys(resumo).length === 0) {
-    texto += 'Nenhum agendamento encontrado.';
-  } else {
-    const diasOrdenados = Object.keys(resumo).sort();
-    diasOrdenados.forEach(dia => {
-      const [ano, mes, diaNum] = dia.split('-');
-texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
-    });
-  }
-
-  document.getElementById('relatorioRefeicoesPeriodo').textContent = texto;
-
-  const link = `https://wa.me/?text=${encodeURIComponent(texto)}`;
-  const whatsappBtn = document.getElementById('whatsappLinkRefeicoes');
-  whatsappBtn.href = link;
-  whatsappBtn.style.display = 'inline-block';
-}
-</script>
-<script>
-  document.getElementById('toggleLoginSenha').addEventListener('click', function () {
-    const input = document.getElementById('loginSenha');
-    input.type = input.type === 'password' ? 'text' : 'password';
-    this.textContent = input.type === 'password' ? '👁️' : '🙈';
-  });
-
-  document.getElementById('toggleCadastroSenha').addEventListener('click', function () {
-    const input = document.getElementById('senhaCadastroIndividual');
-    input.type = input.type === 'password' ? 'text' : 'password';
-    this.textContent = input.type === 'password' ? '👁️' : '🙈';
-  });
-</script>
-<script>
-  document.getElementById('formMissionario').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const nome = document.getElementById('nomeMissionario').value;
-    const senha = document.getElementById('senhaMissionario').value;
-    const tipo = document.getElementById('tipoUsuario').value;
-
-    if (usuarios.find(u => u.nome === nome)) {
-      alert('Usuário já existe!');
+    if (error) {
+      console.error('Erro ao buscar registros:', error);
+      document.getElementById('relatorio').textContent = 'Erro ao gerar relatório.';
       return;
     }
 
-    usuarios.push({ nome, senha, tipo });
-    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+    if (!registros || registros.length === 0) {
+      document.getElementById('relatorio').textContent = 'Nenhum registro encontrado no período selecionado.';
+      return;
+    }
+
+    const resumo = {};
+    registros.forEach(reg => {
+      const nome = reg.usuario;
+      if (!resumo[nome]) {
+        resumo[nome] = {
+          lavanderia: 0,
+          carroPessoal: 0,
+          carroDepartamento: {},
+          carroTag: 0,
+          carroTagPorDepartamento: {},
+          xerox: 0,
+          refeicoes: 0,
+          hospedagemDias: 0
+        };
+      }
+
+      switch (reg.tipo) {
+        case 'lavanderia':
+          resumo[nome].lavanderia += parseInt(reg.qtdLavagens || 0);
+          break;
+
+        case 'carro':
+          const qtdTag = parseInt(reg.qtdTag || 0);
+          const km = (parseInt(reg.kmFinal || 0) - parseInt(reg.kmInicial || 0)) || 0;
+          if (reg.uso === 'departamento') {
+            const depto = reg.departamento || 'Não especificado';
+            if (!resumo[nome].carroDepartamento[depto]) resumo[nome].carroDepartamento[depto] = 0;
+            if (!resumo[nome].carroTagPorDepartamento[depto]) resumo[nome].carroTagPorDepartamento[depto] = 0;
+            resumo[nome].carroDepartamento[depto] += km;
+            resumo[nome].carroTagPorDepartamento[depto] += qtdTag;
+          } else {
+            resumo[nome].carroPessoal += km;
+            resumo[nome].carroTag += qtdTag;
+          }
+          break;
+
+        case 'xerox':
+          resumo[nome].xerox += parseInt(reg.qtd || 0);
+          break;
+
+        case 'refeicoes':
+          (reg.dias || []).forEach(dia => {
+            const data = new Date(dia.data);
+            if ((inicio && data < inicio) || (fim && data > fim)) return;
+            resumo[nome].refeicoes += parseInt(dia.qtd || 0);
+          });
+          break;
+
+        case 'hospedagem':
+          const entrada = new Date(reg.entrada);
+          const saida = new Date(reg.saida);
+          if ((inicio && saida < inicio) || (fim && entrada > fim)) return;
+          const dias = Math.ceil((saida - entrada) / (1000 * 60 * 60 * 24));
+          if (dias > 0) resumo[nome].hospedagemDias += dias;
+          break;
+      }
+    });
+
+    let texto = '';
+    for (let nome in resumo) {
+      texto += `Usuário: ${nome}\n`;
+      texto += `- Lavanderia: ${resumo[nome].lavanderia} lavagens\n`;
+      texto += `- Uso da TAG: ${resumo[nome].carroTag} usos\n`;
+
+      const tagsDepto = resumo[nome].carroTagPorDepartamento;
+      if (Object.keys(tagsDepto).length > 0) {
+        texto += `- TAG por departamento:\n`;
+        for (let depto in tagsDepto) {
+          texto += `    • ${depto}: ${tagsDepto[depto]} usos\n`;
+        }
+      }
+
+      texto += `- Carro (uso pessoal): ${resumo[nome].carroPessoal} km\n`;
+      texto += `- Carro (por departamento):\n`;
+      for (let depto in resumo[nome].carroDepartamento) {
+        texto += `    • ${depto}: ${resumo[nome].carroDepartamento[depto]} km\n`;
+      }
+
+      texto += `- Xerox: ${resumo[nome].xerox} cópias\n`;
+      texto += `- Refeições: ${resumo[nome].refeicoes} refeições\n`;
+      texto += `- Hospedagem: ${resumo[nome].hospedagemDias} dias\n\n`;
+    }
+
+    document.getElementById('relatorio').textContent = texto;
+  }
+</script>
+<script>
+  async function prepararRegistro() {
+    const tipo = document.getElementById('tipoServico').value;
+    const usuario = usuarioAtual.nome;
+    const hoje = new Date().toISOString().split('T')[0];
+
+    const registro = { tipo, usuario, data: hoje };
+
+    // Validação e preenchimento por tipo
+    if (tipo === 'lavanderia') {
+      const lavagens = document.getElementById('qtdLavagens').value;
+      const secagens = document.getElementById('qtdSecagens').value;
+      const data = document.getElementById('dataLavanderia').value;
+
+      if (!lavagens || !secagens) return alert('Preencha a quantidade de lavagens e secagens.');
+      if (!data) return alert('Informe a data.');
+      
+      registro.qtdLavagens = parseInt(lavagens);
+      registro.qtdSecagens = parseInt(secagens);
+      registro.data = data;
+
+    } else if (tipo === 'carro') {
+      const kmInicial = document.getElementById('kmInicial').value;
+      const kmFinal = document.getElementById('kmFinal').value;
+      const qtdTag = document.getElementById('qtdTag').value;
+      const uso = document.getElementById('usoCarro').value;
+      const data = document.getElementById('dataCarro').value;
+
+      if (!kmInicial || !kmFinal || isNaN(kmInicial) || isNaN(kmFinal)) {
+        return alert('Informe os km inicial e final.');
+      }
+      if (!data) return alert('Informe a data.');
+
+      registro.kmInicial = parseInt(kmInicial);
+      registro.kmFinal = parseInt(kmFinal);
+      registro.qtdTag = parseInt(qtdTag) || 0;
+      registro.uso = uso;
+      registro.data = data;
+
+      if (uso === 'departamento') {
+        const departamento = document.getElementById('departamento').value;
+        if (!departamento) return alert('Informe o nome do departamento.');
+        registro.departamento = departamento;
+      }
+
+    } else if (tipo === 'xerox') {
+      const qtd = document.getElementById('qtdXerox').value;
+      const data = document.getElementById('dataXerox').value;
+
+      if (!qtd) return alert('Informe a quantidade de cópias.');
+      if (!data) return alert('Informe a data.');
+
+      registro.qtd = parseInt(qtd);
+      registro.data = data;
+
+    } else if (tipo === 'refeicoes') {
+      const dias = [];
+      let erro = false;
+
+      document.querySelectorAll('.linha-dia').forEach(el => {
+        const data = el.querySelector('.data-refeicao').value;
+        const qtd = el.querySelector('.qtd-refeicao').value;
+        if (!data || !qtd) erro = true;
+        dias.push({ data, qtd: parseInt(qtd) });
+      });
+
+      if (erro || dias.length === 0) return alert('Preencha todos os dias e quantidades de refeições.');
+      registro.dias = dias;
+
+    } else if (tipo === 'hospedagem') {
+      const entrada = document.getElementById('entrada').value;
+      const saida = document.getElementById('saida').value;
+
+      if (!entrada || !saida) return alert('Preencha as datas de entrada e saída.');
+      if (saida < entrada) return alert('A data de saída não pode ser anterior à entrada.');
+
+      registro.entrada = entrada;
+      registro.saida = saida;
+    }
+
+    // Envia para o Supabase
+    const { error } = await supabase.from('registros').insert([registro]);
+
+    if (error) {
+      console.error('Erro ao salvar registro:', error);
+      alert('Erro ao salvar registro. Verifique os dados e tente novamente.');
+    } else {
+      alert('Registro salvo com sucesso!');
+      document.getElementById('formUso').reset();
+      document.getElementById('campoDepartamento').innerHTML = ''; // limpa campo extra
+    }
+  }
+
+  document.getElementById('formUso').addEventListener('submit', function (e) {
+    e.preventDefault();
+    prepararRegistro();
+  });
+</script>
+<script>
+// ✅ Confirmação antes de registrar
+if (!confirm('Deseja registrar este uso de serviço?')) return;
+
+// Envio para Supabase
+const { error } = await supabase.from('registros').insert([registro]);
+
+if (error) {
+  console.error('Erro ao salvar registro:', error);
+  alert('Erro ao salvar registro. Verifique os dados e tente novamente.');
+  return;
+}
+
+alert('Registro salvo com sucesso!');
+document.getElementById('formUso').reset();
+document.getElementById('detalhesServico').innerHTML = '';
+document.getElementById('campoDepartamento').innerHTML = ''; // limpa campo extra se houver
+</script>
+<script>
+  async function gerarRelatorioRefeicoesPeriodo() {
+    const dataInicial = document.getElementById('dataRefInicio').value;
+    const dataFinal = document.getElementById('dataRefFim').value;
+
+    if (!dataInicial || !dataFinal) {
+      alert('Selecione um período válido.');
+      return;
+    }
+
+    const inicio = new Date(dataInicial);
+    const fim = new Date(dataFinal);
+    fim.setHours(23, 59, 59, 999); // incluir o último dia inteiro
+
+    // Busca registros de refeições no período
+    const { data: registros, error } = await supabase
+      .from('registros')
+      .select('*')
+      .eq('tipo', 'refeicoes');
+
+    if (error) {
+      console.error('Erro ao buscar registros:', error);
+      alert('Erro ao carregar os registros.');
+      return;
+    }
+
+    if (!registros || registros.length === 0) {
+      alert('Nenhum registro de refeições encontrado.');
+      return;
+    }
+
+    const resumo = {};
+
+    registros.forEach(reg => {
+      if (Array.isArray(reg.dias)) {
+        reg.dias.forEach(dia => {
+          const data = new Date(dia.data);
+          if (data >= inicio && data <= fim) {
+            const diaStr = data.toISOString().split('T')[0];
+            if (!resumo[diaStr]) resumo[diaStr] = 0;
+            resumo[diaStr] += parseInt(dia.qtd || 0);
+          }
+        });
+      }
+    });
+
+    const formatarData = str => {
+      const [ano, mes, dia] = str.split('-');
+      return `${dia}/${mes}/${ano}`;
+    };
+
+    let texto = `🗓️ Refeições agendadas por dia (${formatarData(dataInicial)} a ${formatarData(dataFinal)}):\n\n`;
+
+    if (Object.keys(resumo).length === 0) {
+      texto += 'Nenhum agendamento encontrado.';
+    } else {
+      const diasOrdenados = Object.keys(resumo).sort();
+      diasOrdenados.forEach(dia => {
+        const [ano, mes, diaNum] = dia.split('-');
+        texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
+      });
+    }
+
+    document.getElementById('relatorioRefeicoesPeriodo').textContent = texto;
+
+    const link = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    const whatsappBtn = document.getElementById('whatsappLinkRefeicoes');
+    whatsappBtn.href = link;
+    whatsappBtn.style.display = 'inline-block';
+  }
+</script>
+<script>
+  document.getElementById('formMissionario').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const nome = document.getElementById('nomeMissionario').value.trim();
+    const senha = document.getElementById('senhaMissionario').value;
+    const tipo = document.getElementById('tipoUsuario').value;
+
+    if (!nome || !senha || !tipo) {
+      alert('Preencha todos os campos.');
+      return;
+    }
+
+    // Cria usuário no Supabase Auth
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: `${nome}@fake.com`, // ou real, se desejar
+      password: senha,
+      user_metadata: { nome, tipo }
+    });
+
+    if (error) {
+      console.error(error);
+      alert('Erro ao cadastrar usuário: ' + error.message);
+      return;
+    }
+
     alert(`Usuário "${nome}" cadastrado como "${tipo}" com sucesso.`);
+
+    // (opcional) salvar em tabela `usuarios` adicional
+    await supabase.from('usuarios').insert([{ nome, tipo, auth_id: data.user.id }]);
 
     document.getElementById('formMissionario').reset();
     carregarListaUsuarios();
@@ -646,6 +778,7 @@ texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
 </script>
 </body>
 </html>
+
 
 
 
