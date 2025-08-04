@@ -518,136 +518,148 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 </script>
 <script>
+  function dataBRParaISO(dataBR) {
+    const partes = dataBR.split('/');
+    if (partes.length !== 3) return null;
+    const [dia, mes, ano] = partes;
+    return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+  }
+  
   async function gerarRelatorio() {
-  const dataInicial = document.getElementById('dataInicial').value;
-  const dataFinal = document.getElementById('dataFinal').value;
+    const dataInicial = document.getElementById('dataInicial').value;
+    const dataFinal = document.getElementById('dataFinal').value;
 
-  const inicio = dataInicial ? new Date(dataInicial) : null;
-  const fim = dataFinal ? new Date(dataFinal) : null;
+    // Converter para ISO se estiver no formato brasileiro
+    const dataInicialISO = dataInicial.includes('/') ? dataBRParaISO(dataInicial) : dataInicial;
+    const dataFinalISO = dataFinal.includes('/') ? dataBRParaISO(dataFinal) : dataFinal;
 
-  // 1. Buscar todos os usuários (mapa de user_id -> nome)
-  const { data: usuarios, error: errorUsuarios } = await supabase
-    .from('usuarios')
-    .select('user_id, nome');
+    // Atualizar os objetos Date para os filtros internos
+    const inicio = dataInicialISO ? new Date(dataInicialISO) : null;
+    const fim = dataFinalISO ? new Date(dataFinalISO) : null;
 
-  if (errorUsuarios) {
-    console.error('Erro ao buscar usuários:', errorUsuarios);
-    document.getElementById('relatorio').textContent = 'Erro ao gerar relatório (usuários).';
-    return;
-  }
+    // 1. Buscar todos os usuários (mapa de user_id -> nome)
+    const { data: usuarios, error: errorUsuarios } = await supabase
+      .from('usuarios')
+      .select('user_id, nome');
 
-  const mapaUsuarios = {};
-  usuarios.forEach(u => {
-    mapaUsuarios[u.user_id] = u.nome || u.user_id;
-  });
-
-  // 2. Buscar registros
-  const { data: registros, error } = await supabase
-    .from('registros')
-    .select('*')
-    .gte('data', dataInicial || '1900-01-01')
-    .lte('data', dataFinal || '2999-12-31');
-
-  if (error) {
-    console.error('Erro ao buscar registros:', error);
-    document.getElementById('relatorio').textContent = 'Erro ao gerar relatório.';
-    return;
-  }
-
-  if (!registros || registros.length === 0) {
-    document.getElementById('relatorio').textContent = 'Nenhum registro encontrado no período selecionado.';
-    return;
-  }
-
-  // 3. Gerar resumo
-  const resumo = {};
-  registros.forEach(reg => {
-    const nome = mapaUsuarios[reg.user_id] || reg.user_id;
-
-    if (!resumo[nome]) {
-      resumo[nome] = {
-        lavanderia: 0,
-        carroPessoal: 0,
-        carroDepartamento: {},
-        carroTag: 0,
-        carroTagPorDepartamento: {},
-        xerox: 0,
-        refeicoes: 0,
-        hospedagemDias: 0
-      };
+    if (errorUsuarios) {
+      console.error('Erro ao buscar usuários:', errorUsuarios);
+      document.getElementById('relatorio').textContent = 'Erro ao gerar relatório (usuários).';
+      return;
     }
 
-    switch (reg.tipo) {
-      case 'lavanderia':
-        resumo[nome].lavanderia += Number(reg.qtdLavagens) || 0;
-        break;
+    const mapaUsuarios = {};
+    usuarios.forEach(u => {
+      mapaUsuarios[u.user_id] = u.nome || u.user_id;
+    });
 
-      case 'carro':
-        const qtdTag = Number(reg.qtdTag) || 0;
-        const kmInicial = Number(reg.kmInicial) || 0;
-        const kmFinal = Number(reg.kmFinal) || 0;
-        const km = kmFinal - kmInicial;
+    // 2. Buscar registros **APENAS UMA VEZ** com datas convertidas
+    const { data: registros, error } = await supabase
+      .from('registros')
+      .select('*')
+      .gte('data', dataInicialISO || '1900-01-01')
+      .lte('data', dataFinalISO || '2999-12-31');
 
-        if (reg.uso === 'departamento') {
-          const depto = reg.departamento || 'Não especificado';
-          resumo[nome].carroDepartamento[depto] = (resumo[nome].carroDepartamento[depto] || 0) + km;
-          resumo[nome].carroTagPorDepartamento[depto] = (resumo[nome].carroTagPorDepartamento[depto] || 0) + qtdTag;
-        } else {
-          resumo[nome].carroPessoal += km;
-          resumo[nome].carroTag += qtdTag;
-        }
-        break;
-
-      case 'xerox':
-        resumo[nome].xerox += Number(reg.qtd) || 0;
-        break;
-
-      case 'refeicoes':
-        (reg.dias || []).forEach(dia => {
-          const data = new Date(dia.data);
-          if ((inicio && data < inicio) || (fim && data > fim)) return;
-          resumo[nome].refeicoes += Number(dia.qtd) || 0;
-        });
-        break;
-
-      case 'hospedagem':
-        const entrada = new Date(reg.entrada);
-        const saida = new Date(reg.saida);
-        if ((inicio && saida < inicio) || (fim && entrada > fim)) return;
-        const dias = Math.ceil((saida - entrada) / (1000 * 60 * 60 * 24));
-        if (dias > 0) resumo[nome].hospedagemDias += dias;
-        break;
-    }
-  });
-
-  // 4. Gerar texto final
-  let texto = '';
-  for (let nome in resumo) {
-    const r = resumo[nome];
-    texto += `Usuário: ${nome}\n`;
-
-    texto += `- Carro (uso pessoal): ${r.carroPessoal} km rodados\n`;
-    texto += `- Carro (por departamento):\n`;
-    for (let depto in r.carroDepartamento) {
-      texto += `    • ${depto}: ${r.carroDepartamento[depto]} km rodados\n`;
+    if (error) {
+      console.error('Erro ao buscar registros:', error);
+      document.getElementById('relatorio').textContent = 'Erro ao gerar relatório.';
+      return;
     }
 
-    texto += `- Uso da TAG (total): ${r.carroTag} uso(s)\n`;
-    if (Object.keys(r.carroTagPorDepartamento).length > 0) {
-      texto += `- Uso da TAG por departamento:\n`;
-      for (let depto in r.carroTagPorDepartamento) {
-        texto += `    • ${depto}: ${r.carroTagPorDepartamento[depto]} uso(s)\n`;
+    if (!registros || registros.length === 0) {
+      document.getElementById('relatorio').textContent = 'Nenhum registro encontrado no período selecionado.';
+      return;
+    }
+
+    // 3. Gerar resumo
+    const resumo = {};
+    registros.forEach(reg => {
+      const nome = mapaUsuarios[reg.user_id] || reg.user_id;
+
+      if (!resumo[nome]) {
+        resumo[nome] = {
+          lavanderia: 0,
+          carroPessoal: 0,
+          carroDepartamento: {},
+          carroTag: 0,
+          carroTagPorDepartamento: {},
+          xerox: 0,
+          refeicoes: 0,
+          hospedagemDias: 0
+        };
       }
+
+      switch (reg.tipo) {
+        case 'lavanderia':
+          resumo[nome].lavanderia += Number(reg.qtdLavagens) || 0;
+          break;
+
+        case 'carro':
+          const qtdTag = Number(reg.qtdTag) || 0;
+          const kmInicial = Number(reg.kmInicial) || 0;
+          const kmFinal = Number(reg.kmFinal) || 0;
+          const km = kmFinal - kmInicial;
+
+          if (reg.uso === 'departamento') {
+            const depto = reg.departamento || 'Não especificado';
+            resumo[nome].carroDepartamento[depto] = (resumo[nome].carroDepartamento[depto] || 0) + km;
+            resumo[nome].carroTagPorDepartamento[depto] = (resumo[nome].carroTagPorDepartamento[depto] || 0) + qtdTag;
+          } else {
+            resumo[nome].carroPessoal += km;
+            resumo[nome].carroTag += qtdTag;
+          }
+          break;
+
+        case 'xerox':
+          resumo[nome].xerox += Number(reg.qtd) || 0;
+          break;
+
+        case 'refeicoes':
+          (reg.dias || []).forEach(dia => {
+            const data = new Date(dia.data);
+            if ((inicio && data < inicio) || (fim && data > fim)) return;
+            resumo[nome].refeicoes += Number(dia.qtd) || 0;
+          });
+          break;
+
+        case 'hospedagem':
+          const entrada = new Date(reg.entrada);
+          const saida = new Date(reg.saida);
+          if ((inicio && saida < inicio) || (fim && entrada > fim)) return;
+          const dias = Math.ceil((saida - entrada) / (1000 * 60 * 60 * 24));
+          if (dias > 0) resumo[nome].hospedagemDias += dias;
+          break;
+      }
+    });
+
+    // 4. Gerar texto final
+    let texto = '';
+    for (let nome in resumo) {
+      const r = resumo[nome];
+      texto += `Usuário: ${nome}\n`;
+
+      texto += `- Carro (uso pessoal): ${r.carroPessoal} km rodados\n`;
+      texto += `- Carro (por departamento):\n`;
+      for (let depto in r.carroDepartamento) {
+        texto += `    • ${depto}: ${r.carroDepartamento[depto]} km rodados\n`;
+      }
+
+      texto += `- Uso da TAG (total): ${r.carroTag} uso(s)\n`;
+      if (Object.keys(r.carroTagPorDepartamento).length > 0) {
+        texto += `- Uso da TAG por departamento:\n`;
+        for (let depto in r.carroTagPorDepartamento) {
+          texto += `    • ${depto}: ${r.carroTagPorDepartamento[depto]} uso(s)\n`;
+        }
+      }
+
+      texto += `- Lavanderia: ${r.lavanderia} lavagem(ns)\n`;
+      texto += `- Xerox: ${r.xerox} cópia(s)\n`;
+      texto += `- Refeições: ${r.refeicoes} refeição(ões)\n`;
+      texto += `- Hospedagem: ${r.hospedagemDias} dia(s)\n\n`;
     }
 
-    texto += `- Lavanderia: ${r.lavanderia} lavagem(ns)\n`;
-    texto += `- Xerox: ${r.xerox} cópia(s)\n`;
-    texto += `- Refeições: ${r.refeicoes} refeição(ões)\n`;
-    texto += `- Hospedagem: ${r.hospedagemDias} dia(s)\n\n`;
+    document.getElementById('relatorio').textContent = texto;
   }
-
-  document.getElementById('relatorio').textContent = texto;
-}
 </script>
 <script>
  async function prepararRegistro() {
@@ -867,33 +879,3 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
