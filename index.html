@@ -316,15 +316,6 @@ function excluirUsuario(index) {
     alert('Usuário ou senha inválidos: ' + error.message);
     return;
   }
-
-  // Armazena sessão localmente (caso ainda esteja usando em outras partes do código)
-  const usuario = {
-    id: data.user.id,
-    email: data.user.email
-  };
-  localStorage.setItem('usuarioLogado', JSON.stringify(usuario));
-
-  location.reload(); // ou redirecione para outra página, se preferir
 });
 
   // Cadastro individual
@@ -650,4 +641,5 @@ texto += `• ${diaNum}/${mes}/${ano}: ${resumo[dia]} refeições\n`;
 </script>
 </body>
 </html>
+
 
