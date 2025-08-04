@@ -653,24 +653,6 @@ carregarUsuario();
   });
 </script>
 <script>
-// ✅ Confirmação antes de registrar
-if (!confirm('Deseja registrar este uso de serviço?')) return;
-
-// Envio para Supabase
-const { error } = await supabase.from('registros').insert([registro]);
-
-if (error) {
-  console.error('Erro ao salvar registro:', error);
-  alert('Erro ao salvar registro. Verifique os dados e tente novamente.');
-  return;
-}
-
-alert('Registro salvo com sucesso!');
-document.getElementById('formUso').reset();
-document.getElementById('detalhesServico').innerHTML = '';
-document.getElementById('campoDepartamento').innerHTML = ''; // limpa campo extra se houver
-</script>
-<script>
   async function gerarRelatorioRefeicoesPeriodo() {
     const dataInicial = document.getElementById('dataRefInicio').value;
     const dataFinal = document.getElementById('dataRefFim').value;
@@ -778,6 +760,7 @@ document.getElementById('campoDepartamento').innerHTML = ''; // limpa campo extr
 </script>
 </body>
 </html>
+
 
 
 
