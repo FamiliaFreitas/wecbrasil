@@ -555,10 +555,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Buscar registros **APENAS UMA VEZ** com datas convertidas
     const { data: registros, error } = await supabase
-      .from('registros')
-      .select('*')
-      .gte('created_at', dataInicialISO || '1900-01-01')
-      .lte('created_at', dataFinalISO || '2999-12-31');
+     .from('registros')
+     .select('*')
+     .gte('data', dataInicialISO || '1900-01-01')
+     .lte('data', dataFinalISO || '2999-12-31');
 
     if (error) {
       console.error('Erro ao buscar registros:', error);
@@ -591,13 +591,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       switch (reg.tipo) {
         case 'lavanderia':
-          resumo[nome].lavanderia += Number(reg.qtdLavagens) || 0;
+          resumo[nome].lavanderia += parseInt(reg.qtdLavagens) || 0;
           break;
 
         case 'carro':
-          const qtdTag = Number(reg.qtdTag) || 0;
-          const kmInicial = Number(reg.kmInicial) || 0;
-          const kmFinal = Number(reg.kmFinal) || 0;
+          const qtdTag = parseInt(reg.qtdTag) || 0;
+          const kmInicial = parseInt(reg.kmInicial) || 0;
+          const kmFinal = parseInt(reg.kmFinal) || 0;
           const km = kmFinal - kmInicial;
 
           if (reg.uso === 'departamento') {
@@ -611,14 +611,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           break;
 
         case 'xerox':
-          resumo[nome].xerox += Number(reg.qtd) || 0;
+          resumo[nome].xerox += parseInt(reg.qtd) || 0;
           break;
 
         case 'refeicoes':
           (reg.dias || []).forEach(dia => {
             const data = new Date(dia.data);
             if ((inicio && data < inicio) || (fim && data > fim)) return;
-            resumo[nome].refeicoes += Number(dia.qtd) || 0;
+            resumo[nome].refeicoes += parseInt(dia.qtd) || 0;
           });
           break;
 
@@ -879,4 +879,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
