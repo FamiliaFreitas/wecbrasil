@@ -167,7 +167,7 @@
       const { data: perfil, error: perfilError } = await supabase
         .from('usuarios')
         .select('*')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
     
       if (perfilError || !perfil) {
@@ -356,7 +356,7 @@ async function carregarUsuario() {
   const { data: perfil, error: erroPerfil } = await supabase
     .from('usuarios')
     .select('*')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single();
 
   if (erroPerfil || !perfil) {
@@ -823,6 +823,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
