@@ -32,36 +32,38 @@
     </div>
 
     <!-- Cadastro individual -->
-    <div class="card mb-4 hidden" id="cadastroIndividualCard">
-      <div class="card-header">Cadastro de Novo Usuário</div>
-      <div class="card-body">
-        <form id="formCadastroIndividual">
-          <input type="text" class="form-control mb-2" id="nomeCadastroIndividual" placeholder="Email" required>
-          <div class="input-group mb-2">
-             <input type="password" class="form-control" id="senhaCadastroIndividual" placeholder="Senha" required>
-             <button type="button" class="btn btn-outline-secondary" id="toggleCadastroSenha">👁️</button>
-          </div>
-          <button type="submit" class="btn btn-success">Cadastrar</button>
-          <button type="button" class="btn btn-link" id="btnVoltarLogin">Voltar ao login</button>
-        </form>
+<div class="card mb-4 hidden" id="cadastroIndividualCard">
+  <div class="card-header">Cadastro de Novo Usuário</div>
+  <div class="card-body">
+    <form id="formCadastroIndividual">
+      <input type="text" class="form-control mb-2" id="nomeCadastroIndividual" placeholder="Nome completo" required>
+      <input type="email" class="form-control mb-2" id="emailCadastroIndividual" placeholder="Email" required>
+      <div class="input-group mb-2">
+         <input type="password" class="form-control" id="senhaCadastroIndividual" placeholder="Senha" required>
+         <button type="button" class="btn btn-outline-secondary" id="toggleCadastroSenha">👁️</button>
       </div>
-    </div>
+      <button type="submit" class="btn btn-success">Cadastrar</button>
+      <button type="button" class="btn btn-link" id="btnVoltarLogin">Voltar ao login</button>
+    </form>
+  </div>
+</div>
 
     <!-- Cadastro de usuários (somente para admin) -->
-    <div class="card mb-4 hidden" id="cadastroCard">
-      <div class="card-header">Cadastro de Usuário</div>
-      <div class="card-body">
-        <form id="formMissionario">
-          <input type="text" class="form-control mb-2" id="nomeMissionario" placeholder="Nome do usuário" required>
-          <input type="password" class="form-control mb-2" id="senhaMissionario" placeholder="Senha" required>
-          <select class="form-select mb-2" id="tipoUsuario">
-            <option value="usuario">Usuário</option>
-            <option value="admin">Administrador</option>
-          </select>
-          <button type="submit" class="btn btn-primary">Cadastrar</button>
-        </form>
-      </div>
-    </div>
+<div class="card mb-4 hidden" id="cadastroCard">
+  <div class="card-header">Cadastro de Usuário</div>
+  <div class="card-body">
+    <form id="formMissionario">
+      <input type="text" class="form-control mb-2" id="nomeMissionario" placeholder="Nome do usuário" required>
+      <input type="email" class="form-control mb-2" id="emailMissionario" placeholder="Email" required>
+      <input type="password" class="form-control mb-2" id="senhaMissionario" placeholder="Senha" required>
+      <select class="form-select mb-2" id="tipoUsuario">
+        <option value="usuario">Usuário</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Cadastrar</button>
+    </form>
+  </div>
+</div>
 
     <!-- Alterar senha -->
     <div class="card mb-4 hidden" id="alterarSenhaCard">
@@ -220,12 +222,20 @@
 document.getElementById('formCadastroIndividual')?.addEventListener('submit', async function (e) {
   e.preventDefault();
 
-  const email = document.getElementById('nomeCadastroIndividual').value;
+  const nome = document.getElementById('nomeCadastroIndividual').value;
+  const email = document.getElementById('emailCadastroIndividual').value;
   const senha = document.getElementById('senhaCadastroIndividual').value;
 
+  // Cria o usuário no Supabase Auth, incluindo o nome como metadata
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
-    password: senha
+    password: senha,
+    options: {
+      data: {
+        nome: nome,      // Isso vai para user.user_metadata.nome
+        tipo: 'comum'    // Pode ser usado depois para controle de acesso
+      }
+    }
   });
 
   if (signUpError) {
@@ -240,14 +250,14 @@ document.getElementById('formCadastroIndividual')?.addEventListener('submit', as
     return;
   }
 
-  // Verifique se os campos batem com os da sua tabela
+  // Insere os dados na tabela "usuarios"
   const { error: insertError } = await supabase
     .from('usuarios')
     .insert([
       {
-        user_id: userId,      // uuid
-        nome: email,          // substitua por um campo "nome" se desejar
-        tipo: 'comum',        // ou 'admin', 'professor', etc.
+        user_id: userId,
+        nome: nome,
+        tipo: 'comum',
         email: email
       }
     ]);
@@ -415,7 +425,7 @@ async function carregarListaUsuarios() {
 async function excluirUsuario(id) {
   if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
-  const { error } = await supabase.from('usuarios').delete().eq('id', id);
+  const { error } = await supabase.from('usuarios').delete().eq('user_id', id);
   if (error) {
     alert('Erro ao excluir usuário: ' + error.message);
     return;
@@ -839,6 +849,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
