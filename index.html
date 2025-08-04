@@ -725,7 +725,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     alert('Registro salvo com sucesso!');
     document.getElementById('formUso').reset();
-    document.getElementById('campoDepartamento')?.innerHTML = '';
+    const campoDepartamento = document.getElementById('campoDepartamento');
+    if (campoDepartamento) campoDepartamento.innerHTML = '';
   }
 }
 
@@ -843,6 +844,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
