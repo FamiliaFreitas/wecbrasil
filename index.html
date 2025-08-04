@@ -104,6 +104,48 @@
   </div>
 </div>
 
+<script>
+  // Cadastro individual (para novos usuários comuns)
+  document.getElementById("formCadastroIndividual").addEventListener("submit", async (e) => {
+    e.preventDefault(); // ← ESSENCIAL: evita recarregar a página
+
+    const nome = document.getElementById("nomeCadastroIndividual").value.trim();
+    const email = document.getElementById("emailCadastroIndividual").value.trim().toLowerCase();
+    const senha = document.getElementById("senhaCadastroIndividual").value;
+
+    const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
+      email,
+      password: senha,
+    });
+
+    if (signUpError) {
+      alert("Erro ao cadastrar: " + signUpError.message);
+      return;
+    }
+
+    const user = signUpData.user;
+    if (!user) {
+      alert("Erro: usuário não retornado após cadastro.");
+      return;
+    }
+
+    const { error: insertError } = await supabaseClient
+      .from("usuarios")
+      .insert([{ auth_user_id: user.id, email: email, nome: nome, admin: false }]);
+
+    if (insertError) {
+      alert("Erro ao salvar na tabela usuarios: " + insertError.message);
+      return;
+    }
+
+    alert("Usuário cadastrado com sucesso!");
+    document.getElementById("formCadastroIndividual").reset();
+    // Pode voltar para tela de login, se quiser:
+    // document.getElementById("cadastroIndividualCard").classList.add("hidden");
+    // document.getElementById("loginCard").classList.remove("hidden");
+  });
+</script>
+    
 <!-- Cadastro de usuários (somente para admin) -->
 <div class="card mb-4 hidden" id="cadastroCard">
   <div class="card-header">Cadastro de Usuário</div>
@@ -1134,6 +1176,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
 
 
 
