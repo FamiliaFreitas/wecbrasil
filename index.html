@@ -222,18 +222,22 @@
 document.getElementById('formCadastroIndividual')?.addEventListener('submit', async function (e) {
   e.preventDefault();
 
-  const nome = document.getElementById('nomeCadastroIndividual').value;
-  const email = document.getElementById('emailCadastroIndividual').value;
+  const nome = document.getElementById('nomeCadastroIndividual').value.trim();
+  const email = document.getElementById('emailCadastroIndividual').value.trim();
   const senha = document.getElementById('senhaCadastroIndividual').value;
 
-  // Cria o usuário no Supabase Auth, incluindo o nome como metadata
+  if (!nome || !email || !senha) {
+    alert('Preencha todos os campos.');
+    return;
+  }
+
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password: senha,
     options: {
       data: {
-        nome: nome,      // Isso vai para user.user_metadata.nome
-        tipo: 'comum'    // Pode ser usado depois para controle de acesso
+        nome,
+        tipo: 'comum'
       }
     }
   });
@@ -250,17 +254,9 @@ document.getElementById('formCadastroIndividual')?.addEventListener('submit', as
     return;
   }
 
-  // Insere os dados na tabela "usuarios"
   const { error: insertError } = await supabase
     .from('usuarios')
-    .insert([
-      {
-        user_id: userId,
-        nome: nome,
-        tipo: 'comum',
-        email: email
-      }
-    ]);
+    .insert([{ user_id: userId, nome, tipo: 'comum', email }]);
 
   if (insertError) {
     alert('Erro ao salvar dados do usuário: ' + insertError.message);
@@ -268,6 +264,7 @@ document.getElementById('formCadastroIndividual')?.addEventListener('submit', as
   }
 
   alert('Cadastro realizado com sucesso. Faça login.');
+  this.reset();
   document.getElementById('btnVoltarLogin')?.click();
 });
 
@@ -849,6 +846,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
