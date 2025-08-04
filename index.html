@@ -562,7 +562,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 3. Gerar resumo
   const resumo = {};
   registros.forEach(reg => {
-    const nome = mapaUsuarios[reg.usuario] || reg.usuario;
+    const nome = mapaUsuarios[reg.user_id] || reg.user_id;
 
     if (!resumo[nome]) {
       resumo[nome] = {
@@ -866,6 +866,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
