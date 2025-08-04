@@ -579,12 +579,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     switch (reg.tipo) {
       case 'lavanderia':
-        resumo[nome].lavanderia += parseInt(reg.qtdLavagens || 0);
+        resumo[nome].lavanderia += Number(reg.qtdLavagens || 0);
         break;
 
       case 'carro':
-        const qtdTag = parseInt(reg.qtdTag || 0);
-        const km = (parseInt(reg.kmFinal || 0) - parseInt(reg.kmInicial || 0)) || 0;
+        const qtdTag = Number(reg.qtdTag || 0);
+        const km = (Number(reg.kmFinal || 0) - Number(reg.kmInicial || 0)) || 0;
         if (reg.uso === 'departamento') {
           const depto = reg.departamento || 'Não especificado';
           if (!resumo[nome].carroDepartamento[depto]) resumo[nome].carroDepartamento[depto] = 0;
@@ -598,14 +598,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         break;
 
       case 'xerox':
-        resumo[nome].xerox += parseInt(reg.qtd || 0);
+        resumo[nome].xerox += Number(reg.qtd || 0);
         break;
 
       case 'refeicoes':
         (reg.dias || []).forEach(dia => {
           const data = new Date(dia.data);
           if ((inicio && data < inicio) || (fim && data > fim)) return;
-          resumo[nome].refeicoes += parseInt(dia.qtd || 0);
+          resumo[nome].refeicoes += Number(dia.qtd || 0);
         });
         break;
 
@@ -866,6 +866,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
