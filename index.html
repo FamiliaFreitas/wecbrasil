@@ -557,8 +557,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { data: registros, error } = await supabase
       .from('registros')
       .select('*')
-      .gte('data', dataInicialISO || '1900-01-01')
-      .lte('data', dataFinalISO || '2999-12-31');
+      .gte('created_at', dataInicialISO || '1900-01-01')
+      .lte('created_at', dataFinalISO || '2999-12-31');
 
     if (error) {
       console.error('Erro ao buscar registros:', error);
@@ -879,3 +879,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
