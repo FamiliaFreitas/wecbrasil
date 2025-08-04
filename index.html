@@ -31,37 +31,17 @@
   <button id="botaoCadastro" style="display: none;">Cadastrar novo usuário</button>
 </div>
     <!-- Login -->
-    <div class="card mb-4" id="loginCard">
-      <div class="card-header">Login</div>
-      <div class="card-body">
-        <form id="formLogin">
-  <input type="email" id="emailLogin" placeholder="Seu e-mail" required>
-  <input type="password" id="senhaLogin" placeholder="Senha" required>
-  <button type="submit">Entrar</button>
-</form>
-        <div class="mt-3">
-          <span>Não tem conta?</span>
-          <button class="btn btn-link p-0" id="btnMostrarCadastro">Cadastre-se</button>
-        </div>
-      </div>
-    </div>
+    <div id="auth-container">
+    <input type="email" id="email" placeholder="Email"><br>
+    <input type="password" id="password" placeholder="Senha"><br>
+    <button onclick="login()">Entrar</button>
+    <button onclick="signUp()">Cadastrar</button>
+  </div>
 
-<!-- Cadastro individual -->
-<div class="card mb-4 hidden" id="cadastroIndividualCard">
-  <div class="card-header">Cadastro de Novo Usuário</div>
-  <div class="card-body">
-    <form id="formCadastroIndividual">
-  <input type="text" class="form-control mb-2" id="nomeCadastroIndividual" placeholder="Nome completo" required>
-  <input type="email" class="form-control mb-2" id="emailCadastroIndividual" placeholder="Seu e-mail" required>
-  <div class="input-group mb-2">
-    <input type="password" class="form-control" id="senhaCadastroIndividual" placeholder="Senha" required>
-    <button type="button" class="btn btn-outline-secondary" id="toggleCadastroSenha">👁️</button>
+  <div id="user-container" style="display: none;">
+    <p id="user-email"></p>
+    <button onclick="logout()">Sair</button>
   </div>
-  <button type="submit" class="btn btn-success">Cadastrar</button>
-  <button type="button" class="btn btn-link" id="btnVoltarLogin">Voltar ao login</button>
-</form>
-  </div>
-</div>
     
 <!-- Cadastro de usuários (somente para admin) -->
 <div class="card mb-4 hidden" id="cadastroCard">
@@ -97,61 +77,51 @@
 <script>
       // Login com Supabase
 async function login() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
-    alert('Erro no login: ' + error.message);
-  } else {
-    showUser(data.session.user); // ✅ CORRIGIDO AQUI
-  }
-}
-    </script>
-  <script>
-  // Cadastro individual (para novos usuários comuns)
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("formCadastroIndividual").addEventListener("submit", async (e) => {
-    e.preventDefault(); // ← ESSENCIAL: evita recarregar a página
+      if (error) {
+        alert('Erro no login: ' + error.message);
+      } else if (data.session && data.session.user) {
+        showUser(data.session.user); // ✅ CORRIGIDO
+      }
+    }
 
-    const nome = document.getElementById("nomeCadastroIndividual").value.trim();
-    const email = document.getElementById("emailCadastroIndividual").value.trim().toLowerCase();
-    const senha = document.getElementById("senhaCadastroIndividual").value;
+    async function signUp() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
 
-    const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
-      email,
-      password: senha,
+      const { data, error } = await supabase.auth.signUp({ email, password });
+
+      if (error) {
+        alert('Erro no cadastro: ' + error.message);
+      } else {
+        alert('Cadastro realizado com sucesso. Verifique seu email.');
+      }
+    }
+
+    function showUser(user) {
+      document.getElementById('user-email').innerText = `Logado como: ${user.email}`;
+      document.getElementById('auth-container').style.display = 'none';
+      document.getElementById('user-container').style.display = 'block';
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      document.getElementById('auth-container').style.display = 'block';
+      document.getElementById('user-container').style.display = 'none';
+    }
+
+    // Verificar sessão atual ao abrir a página
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && session.user) {
+        showUser(session.user);
+      }
     });
-
-    if (signUpError) {
-      alert("Erro ao cadastrar: " + signUpError.message);
-      return;
-    }
-
-    const user = signUpData.user;
-    if (!user) {
-      alert("Erro: usuário não retornado após cadastro.");
-      return;
-    }
-
-    const { error: insertError } = await supabaseClient
-      .from("usuarios")
-      .insert([{ auth_user_id: user.id, email: email, nome: nome, admin: false }]);
-
-    if (insertError) {
-      alert("Erro ao salvar na tabela usuarios: " + insertError.message);
-      return;
-    }
-
-    alert("Usuário cadastrado com sucesso!");
-    document.getElementById("formCadastroIndividual").reset();
-    // Pode voltar para tela de login, se quiser:
-    // document.getElementById("cadastroIndividualCard").classList.add("hidden");
-    // document.getElementById("loginCard").classList.remove("hidden");
-  });
-</script>
-<script>
+  </script>
+  <script>
   // Mostrar/ocultar senha
   document.getElementById("toggleCadastroSenha").addEventListener("click", () => {
     const senhaInput = document.getElementById("senhaCadastroIndividual");
@@ -1151,6 +1121,7 @@ async function gerarRelatorioRefeicoesPeriodo() {
 </script>
 </body>
 </html>
+
 
 
 
