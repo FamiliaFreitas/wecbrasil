@@ -165,11 +165,11 @@
       }
 
       const { data: perfil, error: perfilError } = await supabase
-        .from('perfis')
+        .from('usuarios')
         .select('*')
         .eq('id', user.id)
         .single();
-
+    
       if (perfilError || !perfil) {
         alert('Erro ao carregar perfil: ' + (perfilError?.message || 'Perfil não encontrado.'));
         await supabase.auth.signOut();
@@ -823,6 +823,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
