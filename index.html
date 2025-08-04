@@ -525,6 +525,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const inicio = dataInicial ? new Date(dataInicial) : null;
     const fim = dataFinal ? new Date(dataFinal) : null;
 
+    // 1. Buscar registros
     let { data: registros, error } = await supabase
       .from('registros')
       .select('*')
@@ -542,9 +543,33 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    // 2. Obter todos os user_ids únicos dos registros
+    const userIds = [...new Set(registros.map(r => r.user_id))];
+
+    // 3. Buscar os nomes correspondentes na tabela 'usuarios'
+    const { data: usuarios, error: errorUsuarios } = await supabase
+      .from('usuarios')
+      .select('user_id, nome')
+      .in('user_id', userIds);
+
+    if (errorUsuarios) {
+      console.error('Erro ao buscar nomes dos usuários:', errorUsuarios);
+      document.getElementById('relatorio').textContent = 'Erro ao buscar nomes dos usuários.';
+      return;
+    }
+
+    // 4. Criar mapa de user_id → nome
+    const mapaNomes = {};
+    usuarios.forEach(u => {
+      mapaNomes[u.user_id] = u.nome;
+    });
+
+    // 5. Construir resumo
     const resumo = {};
     registros.forEach(reg => {
-      const nome = reg.user_id;
+      const userId = reg.user_id;
+      const nome = mapaNomes[userId] || userId; // fallback para o UUID se não tiver nome
+
       if (!resumo[nome]) {
         resumo[nome] = {
           lavanderia: 0,
@@ -600,35 +625,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
+    // 6. Gerar texto
     let texto = '';
-for (let nome in resumo) {
-  const r = resumo[nome];
-  texto += `Usuário: ${nome}\n`;
-
-  // CARRO
-  texto += `- Carro (uso pessoal): ${r.carroPessoal} km rodados\n`;
-  texto += `- Carro (por departamento):\n`;
-  for (let depto in r.carroDepartamento) {
-    texto += `    • ${depto}: ${r.carroDepartamento[depto]} km rodados\n`;
-  }
-
-  // TAG
-  texto += `- Uso da TAG (total): ${r.carroTag} uso(s)\n`;
-  if (Object.keys(r.carroTagPorDepartamento).length > 0) {
-    texto += `- Uso da TAG por departamento:\n`;
-    for (let depto in r.carroTagPorDepartamento) {
-      texto += `    • ${depto}: ${r.carroTagPorDepartamento[depto]} uso(s)\n`;
+    for (let nome in resumo) {
+      const r = resumo[nome];
+      texto += `Usuário: ${nome}\n`;
+      texto += `- Carro (uso pessoal): ${r.carroPessoal} km rodados\n`;
+      texto += `- Carro (por departamento):\n`;
+      for (let depto in r.carroDepartamento) {
+        texto += `    • ${depto}: ${r.carroDepartamento[depto]} km rodados\n`;
+      }
+      texto += `- Uso da TAG (total): ${r.carroTag} uso(s)\n`;
+      if (Object.keys(r.carroTagPorDepartamento).length > 0) {
+        texto += `- Uso da TAG por departamento:\n`;
+        for (let depto in r.carroTagPorDepartamento) {
+          texto += `    • ${depto}: ${r.carroTagPorDepartamento[depto]} uso(s)\n`;
+        }
+      }
+      texto += `- Lavanderia: ${r.lavanderia} lavagem(ns)\n`;
+      texto += `- Xerox: ${r.xerox} cópia(s)\n`;
+      texto += `- Refeições: ${r.refeicoes} refeição(ões)\n`;
+      texto += `- Hospedagem: ${r.hospedagemDias} dia(s)\n\n`;
     }
-  }
 
-  // DEMAIS
-  texto += `- Lavanderia: ${r.lavanderia} lavagem(ns)\n`;
-  texto += `- Xerox: ${r.xerox} cópia(s)\n`;
-  texto += `- Refeições: ${r.refeicoes} refeição(ões)\n`;
-  texto += `- Hospedagem: ${r.hospedagemDias} dia(s)\n\n`;
-}
-
-document.getElementById('relatorio').textContent = texto;
+    document.getElementById('relatorio').textContent = texto;
   }
 </script>
 <script>
@@ -849,6 +869,7 @@ document.getElementById('relatorio').textContent = texto;
 </script>
 </body>
 </html>
+
 
 
 
