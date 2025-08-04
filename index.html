@@ -217,47 +217,51 @@
       location.reload();
     });
 
-    document.getElementById('formCadastroIndividual')?.addEventListener('submit', async function (e) {
+document.getElementById('formCadastroIndividual')?.addEventListener('submit', async function (e) {
   e.preventDefault();
 
   const email = document.getElementById('nomeCadastroIndividual').value;
   const senha = document.getElementById('senhaCadastroIndividual').value;
 
-  const { data, error } = await supabase.auth.signUp({
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password: senha
   });
 
-  if (error) {
-    alert('Erro ao cadastrar: ' + error.message);
+  if (signUpError) {
+    alert('Erro ao cadastrar: ' + signUpError.message);
     return;
   }
 
-  const userId = data.user?.id;
+  const userId = signUpData?.user?.id;
+
   if (!userId) {
-    alert('Erro ao obter ID do usuário após cadastro.');
+    alert('Usuário criado, mas não foi possível obter o ID.');
     return;
   }
 
-  // 🔽 Altere o nome da tabela e campos conforme o seu banco
+  // Verifique se os campos batem com os da sua tabela
   const { error: insertError } = await supabase
-    .from('usuarios') // ou 'perfis', se for o seu caso
-    .insert([{
-      user_id: userId,
-      email: email,
-      tipo: 'comum', // ou 'admin', se necessário
-      nome: email     // ou outro campo nomeado
-    }]);
+    .from('usuarios')
+    .insert([
+      {
+        user_id: userId,      // uuid
+        nome: email,          // substitua por um campo "nome" se desejar
+        tipo: 'comum',        // ou 'admin', 'professor', etc.
+        email: email
+      }
+    ]);
 
   if (insertError) {
-    alert('Erro ao salvar na tabela de usuários: ' + insertError.message);
+    alert('Erro ao salvar dados do usuário: ' + insertError.message);
     return;
   }
 
   alert('Cadastro realizado com sucesso. Faça login.');
   document.getElementById('btnVoltarLogin')?.click();
 });
-    verificarLogin();
+
+  verificarLogin();
 </script>     
 <script>
 function mostrarCamposServico() {
@@ -823,6 +827,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
