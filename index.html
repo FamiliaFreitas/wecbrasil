@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const resumo = {};
     registros.forEach(reg => {
-      const nome = reg.usuario;
+      const nome = reg.user_id;
       if (!resumo[nome]) {
         resumo[nome] = {
           lavanderia: 0,
@@ -601,31 +601,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     let texto = '';
-    for (let nome in resumo) {
-      texto += `Usuário: ${nome}\n`;
-      texto += `- Lavanderia: ${resumo[nome].lavanderia} lavagens\n`;
-      texto += `- Uso da TAG: ${resumo[nome].carroTag} usos\n`;
+for (let nome in resumo) {
+  const r = resumo[nome];
+  texto += `Usuário: ${nome}\n`;
 
-      const tagsDepto = resumo[nome].carroTagPorDepartamento;
-      if (Object.keys(tagsDepto).length > 0) {
-        texto += `- TAG por departamento:\n`;
-        for (let depto in tagsDepto) {
-          texto += `    • ${depto}: ${tagsDepto[depto]} usos\n`;
-        }
-      }
+  // CARRO
+  texto += `- Carro (uso pessoal): ${r.carroPessoal} km rodados\n`;
+  texto += `- Carro (por departamento):\n`;
+  for (let depto in r.carroDepartamento) {
+    texto += `    • ${depto}: ${r.carroDepartamento[depto]} km rodados\n`;
+  }
 
-      texto += `- Carro (uso pessoal): ${resumo[nome].carroPessoal} km\n`;
-      texto += `- Carro (por departamento):\n`;
-      for (let depto in resumo[nome].carroDepartamento) {
-        texto += `    • ${depto}: ${resumo[nome].carroDepartamento[depto]} km\n`;
-      }
-
-      texto += `- Xerox: ${resumo[nome].xerox} cópias\n`;
-      texto += `- Refeições: ${resumo[nome].refeicoes} refeições\n`;
-      texto += `- Hospedagem: ${resumo[nome].hospedagemDias} dias\n\n`;
+  // TAG
+  texto += `- Uso da TAG (total): ${r.carroTag} uso(s)\n`;
+  if (Object.keys(r.carroTagPorDepartamento).length > 0) {
+    texto += `- Uso da TAG por departamento:\n`;
+    for (let depto in r.carroTagPorDepartamento) {
+      texto += `    • ${depto}: ${r.carroTagPorDepartamento[depto]} uso(s)\n`;
     }
+  }
 
-    document.getElementById('relatorio').textContent = texto;
+  // DEMAIS
+  texto += `- Lavanderia: ${r.lavanderia} lavagem(ns)\n`;
+  texto += `- Xerox: ${r.xerox} cópia(s)\n`;
+  texto += `- Refeições: ${r.refeicoes} refeição(ões)\n`;
+  texto += `- Hospedagem: ${r.hospedagemDias} dia(s)\n\n`;
+}
+
+document.getElementById('relatorio').textContent = texto;
   }
 </script>
 <script>
@@ -846,6 +849,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
