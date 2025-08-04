@@ -218,27 +218,47 @@
     });
 
     document.getElementById('formCadastroIndividual')?.addEventListener('submit', async function (e) {
-      e.preventDefault();
+  e.preventDefault();
 
-      const email = document.getElementById('nomeCadastroIndividual').value;
-      const senha = document.getElementById('senhaCadastroIndividual').value;
+  const email = document.getElementById('nomeCadastroIndividual').value;
+  const senha = document.getElementById('senhaCadastroIndividual').value;
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: senha
-      });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: senha
+  });
 
-      if (error) {
-        alert('Erro ao cadastrar: ' + error.message);
-        return;
-      }
+  if (error) {
+    alert('Erro ao cadastrar: ' + error.message);
+    return;
+  }
 
-      alert('Cadastro realizado com sucesso. Faça login.');
-      document.getElementById('btnVoltarLogin')?.click();
-    });
+  const userId = data.user?.id;
+  if (!userId) {
+    alert('Erro ao obter ID do usuário após cadastro.');
+    return;
+  }
 
-    verificarLogin();</script>
-      
+  // 🔽 Altere o nome da tabela e campos conforme o seu banco
+  const { error: insertError } = await supabase
+    .from('usuarios') // ou 'perfis', se for o seu caso
+    .insert([{
+      id: userId,
+      email: email,
+      tipo: 'comum', // ou 'admin', se necessário
+      nome: email     // ou outro campo nomeado
+    }]);
+
+  if (insertError) {
+    alert('Erro ao salvar na tabela de usuários: ' + insertError.message);
+    return;
+  }
+
+  alert('Cadastro realizado com sucesso. Faça login.');
+  document.getElementById('btnVoltarLogin')?.click();
+});
+    verificarLogin();
+</script>     
 <script>
 function mostrarCamposServico() {
   const tipo = document.getElementById('tipoServico').value;
@@ -803,6 +823,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
