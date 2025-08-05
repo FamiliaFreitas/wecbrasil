@@ -538,20 +538,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const fim = dataFinalISO ? new Date(dataFinalISO) : null;
 
     // 1. Buscar todos os usuários (mapa de user_id -> nome)
-    const { data: usuarios, error: errorUsuarios } = await supabase
-      .from('usuarios')
-      .select('user_id, nome');
+   const { data: usuarios, error: errorUsuarios } = await supabase
+  .from('usuarios')
+  .select('user_id, nome');
 
-    if (errorUsuarios) {
-      console.error('Erro ao buscar usuários:', errorUsuarios);
-      document.getElementById('relatorio').textContent = 'Erro ao gerar relatório (usuários).';
-      return;
-    }
+if (errorUsuarios) {
+  console.error('Erro ao buscar usuários:', errorUsuarios);
+  document.getElementById('relatorio').textContent = 'Erro ao gerar relatório (usuários).';
+  return;
+}
 
-    const mapaUsuarios = {};
-    usuarios.forEach(u => {
-      mapaUsuarios[u.user_id] = u.nome || u.user_id;
-    });
+console.log('Usuários:', usuarios);  // <-- aqui
+const mapaUsuarios = {};
+usuarios.forEach(u => {
+  mapaUsuarios[u.user_id] = u.nome || u.user_id;
+});
+console.log('Mapa de usuários:', mapaUsuarios);  // <-- aqui
 
     // 2. Buscar registros **APENAS UMA VEZ** com datas convertidas
     const { data: registros, error } = await supabase
@@ -662,7 +664,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 </script>
 <script>
- async function prepararRegistro() {
+  async function prepararRegistro() {
   // 🧠 Recuperar o usuário logado
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {
@@ -894,3 +896,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
