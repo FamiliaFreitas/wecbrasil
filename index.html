@@ -591,22 +591,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       switch (reg.tipo) {
         case 'lavanderia':
-          resumo[nome].lavanderia += parseInt(reg.qtdLavagens) || 0;
+          resumo[nome].lavanderia += parseInt(reg.qtdlavagens) || 0;
           break;
 
         case 'carro':
-          const qtdTag = parseInt(reg.qtdTag) || 0;
-          const kmInicial = parseInt(reg.kmInicial) || 0;
-          const kmFinal = parseInt(reg.kmFinal) || 0;
-          const km = kmFinal - kmInicial;
+          const qtdTag = parseInt(reg.qtdtag) || 0;
+          const kmInicial = parseInt(reg.kminicial) || 0;
+          const kmFinal = parseInt(reg.kmfinal) || 0;
+          const km = kmfinal - kminicial;
 
           if (reg.uso === 'departamento') {
             const depto = reg.departamento || 'Não especificado';
             resumo[nome].carroDepartamento[depto] = (resumo[nome].carroDepartamento[depto] || 0) + km;
-            resumo[nome].carroTagPorDepartamento[depto] = (resumo[nome].carroTagPorDepartamento[depto] || 0) + qtdTag;
+            resumo[nome].carroTagPorDepartamento[depto] = (resumo[nome].carroTagPorDepartamento[depto] || 0) + qtdtag;
           } else {
             resumo[nome].carroPessoal += km;
-            resumo[nome].carroTag += qtdTag;
+            resumo[nome].carroTag += qtdtag;
           }
           break;
 
@@ -879,5 +879,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
