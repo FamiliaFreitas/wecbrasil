@@ -566,15 +566,83 @@ document.addEventListener('DOMContentLoaded', async () => {
       throw new Error(errorText || 'Erro ao gerar relatório');
     }
 
-    const { texto } = await response.json();
-    document.getElementById('relatorio').textContent = texto;
+    const { usuarios, registros } = await response.json();
+
+    const resumo = {};
+
+    registros.forEach(reg => {
+      const nome = usuarios[reg.user_id] || reg.user_id;
+
+      if (!resumo[nome]) {
+        resumo[nome] = {
+          lavanderia: 0,
+          carroPessoal: 0,
+          carroDepartamento: {},
+          carroTag: 0,
+          carroTagPorDepartamento: {},
+          xerox: 0,
+          refeicoes: 0,
+          hospedagemDias: 0
+        };
+      }
+
+      resumo[nome].lavanderia += reg.qtdlavagens || 0;
+      resumo[nome].carroPessoal += reg.qtdcarropessoal || 0;
+      resumo[nome].xerox += reg.qtdxerox || 0;
+      resumo[nome].refeicoes += reg.qtdrefeicoes || 0;
+      resumo[nome].hospedagemDias += reg.qtdhospedagem || 0;
+
+      if (reg.departamentocarro) {
+        resumo[nome].carroDepartamento[reg.departamentocarro] = 
+          (resumo[nome].carroDepartamento[reg.departamentocarro] || 0) + (reg.qtdcarrodepartamento || 0);
+      }
+
+      if (reg.departamentotag) {
+        resumo[nome].carroTag += reg.qtdcarrotag || 0;
+        resumo[nome].carroTagPorDepartamento[reg.departamentotag] = 
+          (resumo[nome].carroTagPorDepartamento[reg.departamentotag] || 0) + (reg.qtdcarrotag || 0);
+      }
+    });
+
+    let texto = `RELATÓRIO DE USO DOS SERVIÇOS\nPeríodo: ${dataInicial} a ${dataFinal}\n\n`;
+
+    Object.entries(resumo).forEach(([nome, dados]) => {
+      texto += `Nome: ${nome}\n`;
+      if (dados.lavanderia > 0) texto += `- Lavanderia: ${dados.lavanderia}\n`;
+      if (dados.carroPessoal > 0) texto += `- Carro pessoal: ${dados.carroPessoal}\n`;
+
+      const depsCarro = Object.entries(dados.carroDepartamento);
+      if (depsCarro.length > 0) {
+        texto += `- Carro por departamento:\n`;
+        depsCarro.forEach(([dep, qtd]) => {
+          texto += `  • ${dep}: ${qtd}\n`;
+        });
+      }
+
+      if (dados.carroTag > 0) {
+        texto += `- Carro com TAG: ${dados.carroTag}\n`;
+        const depsTag = Object.entries(dados.carroTagPorDepartamento);
+        if (depsTag.length > 0) {
+          texto += `- Carro com TAG por departamento:\n`;
+          depsTag.forEach(([dep, qtd]) => {
+            texto += `  • ${dep}: ${qtd}\n`;
+          });
+        }
+      }
+
+      if (dados.xerox > 0) texto += `- Cópias/xerox: ${dados.xerox}\n`;
+      if (dados.refeicoes > 0) texto += `- Refeições: ${dados.refeicoes}\n`;
+      if (dados.hospedagemDias > 0) texto += `- Dias de hospedagem: ${dados.hospedagemDias}\n`;
+      texto += `\n`;
+    });
+
+    document.getElementById('relatorio').textContent = texto || 'Nenhum dado no período.';
 
   } catch (err) {
     console.error('Erro na geração do relatório:', err);
     document.getElementById('relatorio').textContent = 'Erro ao gerar relatório.';
   }
 }
-
 </script>
 <script>
   async function prepararRegistro() {
@@ -809,6 +877,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
