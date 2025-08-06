@@ -6,8 +6,8 @@ serve(async (req)=>{
       status: 405
     });
   }
-  const supabaseUrl = Deno.env.get("PROJECT_URL");
-  const supabaseServiceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
+  const supabaseUrl = import.meta.env.VERCEL_SUPABASE_URL;
+  const supabaseServiceRoleKey = import.meta.env.VERCEL_SUPABASE_SERVICE_ROLE_KEY;
   const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
   try {
     const { user_id } = await req.json();
