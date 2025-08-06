@@ -7,7 +7,7 @@ serve(async (req)=>{
     });
   }
   const supabaseUrl = import.meta.env.VERCEL_SUPABASE_URL;
-const supabaseServiceRoleKey = import.meta.env.VERCEL_SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseServiceRoleKey = import.meta.env.VERCEL_SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     return new Response("Environment variables not set", {
       status: 500
