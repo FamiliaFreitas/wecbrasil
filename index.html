@@ -413,7 +413,7 @@ async function carregarUsuario() {
   }
 
   // 🚨 Chamada à Edge Function
-  const res = await fetch('/api/listar-usuarios');
+  const res = await fetch('/api/listar-usuarios-ts');
   const usuarios = await res.json();
 
   usuarios.forEach((u) => {
@@ -432,7 +432,7 @@ async function carregarUsuario() {
 async function excluirUsuario(user_id) {
   if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
-  const res = await fetch('/api/excluir-usuario', {
+  const res = await fetch('/api/excluir-usuario-ts', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -552,7 +552,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const dataFinalISO = dataFinal.includes('/') ? dataBRParaISO(dataFinal) : dataFinal;
 
   try {
-    const response = await fetch('/relatorio', {
+    const response = await fetch('/api/gerar_relatorio', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -877,6 +877,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
