@@ -389,19 +389,18 @@ async function carregarUsuario() {
     document.getElementById('gerenciarUsuariosCard').classList.remove('hidden');
     carregarListaUsuarios(); // essa função você já deve ter
   }
-}
-async function carregarListaUsuarios() {
+}async function carregarListaUsuarios() {
   const lista = document.getElementById('listaUsuarios');
   lista.innerHTML = '';
 
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const { data: sessionData } = await supabase.auth.getSession();
   const session = sessionData?.session;
-
-  if (!session || sessionError) {
+  if (!session) {
     alert('Sessão inválida.');
     return;
   }
 
+  // Verifica se é admin (continua usando Supabase aqui)
   const { data: usuarioLogado, error: erroUsuario } = await supabase
     .from("usuarios")
     .select("tipo")
@@ -413,41 +412,45 @@ async function carregarListaUsuarios() {
     return;
   }
 
-  const { data: usuarios, error } = await supabase
-    .from("usuarios")
-    .select("id, user_id, nome, tipo");
-
-  if (error) {
-    alert('Erro ao carregar usuários: ' + error.message);
-    return;
-  }
+  // 🚨 Chamada à Edge Function
+  const res = await fetch('/api/listar-usuarios');
+  const usuarios = await res.json();
 
   usuarios.forEach((u) => {
-    if (u.user_id === session.user.id) return; // Não permite excluir a si mesmo
+    if (u.user_id === session.user.id) return;
 
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
     li.innerHTML = `
       <span>${u.nome || u.user_id} (${u.tipo})</span>
-      <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.id}')">Excluir</button>
+      <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.user_id}')">Excluir</button>
     `;
     lista.appendChild(li);
   });
 }
 
-async function excluirUsuario(id) {
+async function excluirUsuario(user_id) {
   if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
-  const { error } = await supabase.from('usuarios').delete().eq('user_id', id);
-  if (error) {
-    alert('Erro ao excluir usuário: ' + error.message);
+  const res = await fetch('/api/excluir-usuario', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ user_id }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    alert('Erro ao excluir usuário: ' + err);
     return;
   }
 
   alert('Usuário excluído com sucesso.');
-  carregarListaUsuarios(); // Atualiza a lista
+  carregarListaUsuarios();
 }
-// Logout com Supabase
+
+  // Logout com Supabase
 async function logout() {
   await supabase.auth.signOut();
   localStorage.removeItem('usuarioLogado');
@@ -912,6 +915,7 @@ console.log('Mapa de usuários:', mapaUsuarios);  // <-- aqui
 </script>
 </body>
 </html>
+
 
 
 
