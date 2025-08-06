@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/*.ts": {
-      "runtime": "vercel-edge@latest"
+      "runtime": "vercel-edge@1.0.0"
     }
   }
 }
