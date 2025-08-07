@@ -426,7 +426,7 @@ async function carregarListaUsuarios() {
     return;
   }
 
-  const res = await fetch('/api/listar-usuarios-ts');
+  const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-ts');
   if (!res.ok) {
     alert('Erro ao carregar lista de usuários.');
     return;
@@ -913,6 +913,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
