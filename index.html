@@ -370,41 +370,6 @@ function mostrarCamposServico() {
     }
   </script>
 <script>
-async function carregarUsuario() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    console.warn("Usuário não autenticado");
-    return;
-  }
-
-  const { data: perfil, error: erroPerfil } = await supabase
-    .from('usuarios')
-    .select('*')
-    .eq('user_id', user.id)
-    .single();
-
-  if (erroPerfil || !perfil) {
-    alert("Não foi possível carregar os dados do usuário.");
-    return;
-  }
-
-  // Atualiza visualmente
-  document.getElementById('usuarioLogado').textContent = perfil.nome || user.email;
-
-  document.getElementById('loginCard').classList.add('hidden');
-  document.getElementById('cadastroIndividualCard').classList.add('hidden');
-  document.getElementById('registroCard').classList.remove('hidden');
-
-  if (perfil.tipo === 'admin') {
-    document.getElementById('relatorioCard').classList.remove('hidden');
-    document.getElementById('cadastroCard').classList.remove('hidden');
-    document.getElementById('refeicoesCard').classList.remove('hidden');
-    document.getElementById('gerenciarUsuariosCard').classList.remove('hidden');
-    carregarListaUsuarios(); // essa função você já deve ter
-  }
-}
-
 async function carregarListaUsuarios() {
   const lista = document.getElementById('listaUsuarios');
   lista.innerHTML = '';
@@ -416,7 +381,6 @@ async function carregarListaUsuarios() {
     return;
   }
 
-  // Verifica se é admin (continua usando Supabase aqui)
   const { data: usuarioLogado, error: erroUsuario } = await supabase
     .from("usuarios")
     .select("tipo")
@@ -428,8 +392,13 @@ async function carregarListaUsuarios() {
     return;
   }
 
-  // 🚨 Chamada à Edge Function
-  const res = await fetch('/api/listar-usuarios-ts');
+  const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-ts');
+
+  if (!res.ok) {
+    alert('Erro ao buscar usuários: ' + await res.text());
+    return;
+  }
+
   const usuarios = await res.json();
 
   usuarios.forEach((u) => {
@@ -448,7 +417,7 @@ async function carregarListaUsuarios() {
 async function excluirUsuario(user_id) {
   if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
-  const res = await fetch('/api/excluir-usuario-ts', {
+  const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/excluir-usuario-ts', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -912,6 +881,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
