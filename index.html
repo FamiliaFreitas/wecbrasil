@@ -776,9 +776,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     alert('Erro ao salvar registro. Verifique os dados e tente novamente.');
   } else {
     alert('Registro salvo com sucesso!');
-    document.getElementById('formUso').reset();
-    const campoDepartamento = document.getElementById('campoDepartamento');
-    if (campoDepartamento) campoDepartamento.innerHTML = '';
+document.getElementById('formUso').reset();
+document.getElementById('tipoServico').value = ''; // volta o select
+mostrarCamposServico(); // limpa os campos adicionais
+
+const campoDepartamento = document.getElementById('campoDepartamento');
+if (campoDepartamento) campoDepartamento.innerHTML = '';
   }
 }
 
@@ -907,6 +910,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
