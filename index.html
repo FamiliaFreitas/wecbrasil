@@ -894,7 +894,8 @@ console.log('Tipo selecionado:', tipo);  // <--- Aqui
     alert('Preencha todos os campos.');
     return;
   }
-    
+  // resto do código...
+});  
   if (!nome || !email || !senha || !tipo) {
     alert('Preencha todos os campos.');
     return;
@@ -909,7 +910,7 @@ console.log('Tipo selecionado:', tipo);  // <--- Aqui
       return;
     }
 
-    const response = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/criar-usuario', {
+    const response = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/criar-usuario-ts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -938,6 +939,7 @@ console.log('Tipo selecionado:', tipo);  // <--- Aqui
 </script>
 </body>
 </html>
+
 
 
 
