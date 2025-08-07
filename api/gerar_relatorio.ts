@@ -3,25 +3,32 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.3";
 
 serve(async (req) => {
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
+  const supabaseUrl = Deno.env.get("PROJECT_URL");
+  const supabaseServiceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    return new Response(JSON.stringify({ error: "Environment variables not set" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
   try {
-    const env = Deno.env.toObject();
-    const supabaseUrl = env.PROJECT_URL;
-    const supabaseServiceRoleKey = env.SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      console.error("Environment variables not set");
-      return new Response("Environment variables not set", { status: 500 });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
     const { dataInicial, dataFinal } = await req.json();
 
     if (!dataInicial || !dataFinal) {
-      return new Response("Datas inválidas", { status: 400 });
+      return new Response(JSON.stringify({ error: "Datas inválidas" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const { data: usuariosRaw, error: erroUsuarios } = await supabase
@@ -29,11 +36,13 @@ serve(async (req) => {
       .select("user_id, nome");
 
     if (erroUsuarios) {
-      console.error("Erro ao buscar usuários:", erroUsuarios);
-      return new Response("Erro ao buscar usuários: " + erroUsuarios.message, { status: 500 });
+      return new Response(JSON.stringify({ error: "Erro ao buscar usuários", detalhe: erroUsuarios.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const usuariosMap = {};
+    const usuariosMap: Record<string, string> = {};
     usuariosRaw?.forEach((u) => {
       usuariosMap[u.user_id] = u.nome;
     });
@@ -45,22 +54,24 @@ serve(async (req) => {
       .lte("data", dataFinal);
 
     if (erroRegistros) {
-      console.error("Erro ao buscar registros:", erroRegistros);
-      return new Response("Erro ao buscar registros: " + erroRegistros.message, { status: 500 });
+      return new Response(JSON.stringify({ error: "Erro ao buscar registros", detalhe: erroRegistros.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    return new Response(
-      JSON.stringify({
-        usuarios: usuariosMap,
-        registros: registros || [],
-      }),
-      {
-        headers: { "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return new Response(JSON.stringify({
+      usuarios: usuariosMap,
+      registros: registros || [],
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+
   } catch (e) {
-    console.error("Erro no corpo da requisição:", e);
-    return new Response("Erro no corpo da requisição", { status: 400 });
+    return new Response(JSON.stringify({ error: "Erro no corpo da requisição", detalhe: e.message }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 });
