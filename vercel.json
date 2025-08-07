@@ -1,7 +1,7 @@
 {
   "functions": {
-    "api/**/*.ts": {
-      "runtime": "edge"
+    "api/**.ts": {
+      "runtime": "edge@2.0.0"
     }
   }
 }
