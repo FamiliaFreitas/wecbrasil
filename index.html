@@ -408,54 +408,35 @@ async function carregarListaUsuarios() {
   const lista = document.getElementById('listaUsuarios');
   lista.innerHTML = '';
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  const session = sessionData?.session;
-  if (!session) {
-    alert('Sessão inválida.');
-    return;
-  }
+  try {
+    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-ts', {
+      method: 'GET',
+      headers: {
+        // Nenhuma chave secreta aqui!
+        'Content-Type': 'application/json'
+      }
+    });
 
-  // Verifica se é admin
-  const { data: usuarioLogado, error: erroUsuario } = await supabase
-    .from("usuarios")
-    .select("tipo")
-    .eq("user_id", session.user.id)
-    .single();
-
-  if (erroUsuario || !usuarioLogado || usuarioLogado.tipo !== 'admin') {
-    alert('Você não tem permissão para ver esta lista.');
-    return;
-  }
-
-  // Coloque seu serviceRoleKey aqui:
-  const serviceRoleKey = 'SUA_SERVICE_ROLE_KEY_AQUI';
-
-  // Fetch com token no header Authorization:
-  const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-ts', {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${serviceRoleKey}`
+    if (!res.ok) {
+      const err = await res.text();
+      alert('Erro ao carregar lista de usuários: ' + err);
+      return;
     }
-  });
 
-  if (!res.ok) {
-    alert('Erro ao carregar lista de usuários.');
-    return;
+    const usuarios = await res.json();
+
+    usuarios.forEach((u) => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `
+        <span>${u.nome || u.user_id} (${u.tipo})</span>
+        <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.user_id}')">Excluir</button>
+      `;
+      lista.appendChild(li);
+    });
+  } catch (error) {
+    alert('Erro na comunicação com o servidor: ' + error.message);
   }
-
-  const usuarios = await res.json();
-
-  usuarios.forEach((u) => {
-    if (u.user_id === session.user.id) return;
-
-    const li = document.createElement('li');
-    li.className = 'list-group-item d-flex justify-content-between align-items-center';
-    li.innerHTML = `
-      <span>${u.nome || u.user_id} (${u.tipo})</span>
-      <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.user_id}')">Excluir</button>
-    `;
-    lista.appendChild(li);
-  });
 }
 
 async function excluirUsuario(user_id) {
@@ -925,6 +906,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
