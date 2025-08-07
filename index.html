@@ -545,33 +545,57 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   
   async function gerarRelatorio() {
-  const dataInicial = document.getElementById('dataInicial').value;
-  const dataFinal = document.getElementById('dataFinal').value;
+    const dataInicial = document.getElementById('dataInicial').value;
+    const dataFinal = document.getElementById('dataFinal').value;
 
-  const dataInicialISO = dataInicial.includes('/') ? dataBRParaISO(dataInicial) : dataInicial;
-  const dataFinalISO = dataFinal.includes('/') ? dataBRParaISO(dataFinal) : dataFinal;
+    // Converter para ISO se estiver no formato brasileiro
+    const dataInicialISO = dataInicial.includes('/') ? dataBRParaISO(dataInicial) : dataInicial;
+    const dataFinalISO = dataFinal.includes('/') ? dataBRParaISO(dataFinal) : dataFinal;
 
-  try {
-    const response = await fetch('/api/gerar_relatorio', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        dataInicial: dataInicialISO,
-        dataFinal: dataFinalISO
-      })
-    });
+    // Atualizar os objetos Date para os filtros internos
+    const inicio = dataInicialISO ? new Date(dataInicialISO) : null;
+    const fim = dataFinalISO ? new Date(dataFinalISO) : null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Erro ao gerar relatório');
+    // 1. Buscar todos os usuários (mapa de user_id -> nome)
+   const { data: usuarios, error: errorUsuarios } = await supabase
+  .from('usuarios')
+  .select('user_id, nome');
+
+if (errorUsuarios) {
+  console.error('Erro ao buscar usuários:', errorUsuarios);
+  document.getElementById('relatorio').textContent = 'Erro ao gerar relatório (usuários).';
+  return;
+}
+
+console.log('Usuários:', usuarios);  // <-- aqui
+const mapaUsuarios = {};
+usuarios.forEach(u => {
+  mapaUsuarios[u.user_id] = u.nome || u.user_id;
+});
+console.log('Mapa de usuários:', mapaUsuarios);  // <-- aqui
+
+    // 2. Buscar registros **APENAS UMA VEZ** com datas convertidas
+    const { data: registros, error } = await supabase
+     .from('registros')
+     .select('*')
+     .gte('data', dataInicialISO || '1900-01-01')
+     .lte('data', dataFinalISO || '2999-12-31');
+
+    if (error) {
+      console.error('Erro ao buscar registros:', error);
+      document.getElementById('relatorio').textContent = 'Erro ao gerar relatório.';
+      return;
     }
 
-    const { usuarios, registros } = await response.json();
+    if (!registros || registros.length === 0) {
+      document.getElementById('relatorio').textContent = 'Nenhum registro encontrado no período selecionado.';
+      return;
+    }
 
+    // 3. Gerar resumo
     const resumo = {};
-
     registros.forEach(reg => {
-      const nome = usuarios[reg.user_id] || reg.user_id;
+      const nome = mapaUsuarios[reg.user_id] || reg.user_id;
 
       if (!resumo[nome]) {
         resumo[nome] = {
@@ -586,63 +610,77 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
       }
 
-      resumo[nome].lavanderia += reg.qtdlavagens || 0;
-      resumo[nome].carroPessoal += reg.qtdcarropessoal || 0;
-      resumo[nome].xerox += reg.qtdxerox || 0;
-      resumo[nome].refeicoes += reg.qtdrefeicoes || 0;
-      resumo[nome].hospedagemDias += reg.qtdhospedagem || 0;
+      switch (reg.tipo) {
+        case 'lavanderia':
+          resumo[nome].lavanderia += parseInt(reg.qtdlavagens) || 0;
+          break;
 
-      if (reg.departamentocarro) {
-        resumo[nome].carroDepartamento[reg.departamentocarro] = 
-          (resumo[nome].carroDepartamento[reg.departamentocarro] || 0) + (reg.qtdcarrodepartamento || 0);
-      }
+        case 'carro':
+  const qtdTag = parseInt(reg.qtdtag) || 0;
+  const kmInicial = parseInt(reg.kminicial) || 0;
+  const kmFinal = parseInt(reg.kmfinal) || 0;
+  const km = kmFinal - kmInicial;
 
-      if (reg.departamentotag) {
-        resumo[nome].carroTag += reg.qtdcarrotag || 0;
-        resumo[nome].carroTagPorDepartamento[reg.departamentotag] = 
-          (resumo[nome].carroTagPorDepartamento[reg.departamentotag] || 0) + (reg.qtdcarrotag || 0);
+  if (reg.uso === 'departamento') {
+    const depto = reg.departamento || 'Não especificado';
+    resumo[nome].carroDepartamento[depto] = (resumo[nome].carroDepartamento[depto] || 0) + km;
+    resumo[nome].carroTagPorDepartamento[depto] = (resumo[nome].carroTagPorDepartamento[depto] || 0) + qtdTag;
+  } else {
+    resumo[nome].carroPessoal += km;
+    resumo[nome].carroTag += qtdTag;
+  }
+  break;
+
+        case 'xerox':
+          resumo[nome].xerox += parseInt(reg.qtd) || 0;
+          break;
+
+        case 'refeicoes':
+          (reg.dias || []).forEach(dia => {
+            const data = new Date(dia.data);
+            if ((inicio && data < inicio) || (fim && data > fim)) return;
+            resumo[nome].refeicoes += parseInt(dia.qtd) || 0;
+          });
+          break;
+
+        case 'hospedagem':
+          const entrada = new Date(reg.entrada);
+          const saida = new Date(reg.saida);
+          if ((inicio && saida < inicio) || (fim && entrada > fim)) return;
+          const dias = Math.ceil((saida - entrada) / (1000 * 60 * 60 * 24));
+          if (dias > 0) resumo[nome].hospedagemDias += dias;
+          break;
       }
     });
 
-    let texto = `RELATÓRIO DE USO DOS SERVIÇOS\nPeríodo: ${dataInicial} a ${dataFinal}\n\n`;
+    // 4. Gerar texto final
+    let texto = '';
+    for (let nome in resumo) {
+      const r = resumo[nome];
+      texto += `Usuário: ${nome}\n`;
 
-    Object.entries(resumo).forEach(([nome, dados]) => {
-      texto += `Nome: ${nome}\n`;
-      if (dados.lavanderia > 0) texto += `- Lavanderia: ${dados.lavanderia}\n`;
-      if (dados.carroPessoal > 0) texto += `- Carro pessoal: ${dados.carroPessoal}\n`;
-
-      const depsCarro = Object.entries(dados.carroDepartamento);
-      if (depsCarro.length > 0) {
-        texto += `- Carro por departamento:\n`;
-        depsCarro.forEach(([dep, qtd]) => {
-          texto += `  • ${dep}: ${qtd}\n`;
-        });
+      texto += `- Carro (uso pessoal): ${r.carroPessoal} km rodados\n`;
+      texto += `- Carro (por departamento):\n`;
+      for (let depto in r.carroDepartamento) {
+        texto += `    • ${depto}: ${r.carroDepartamento[depto]} km rodados\n`;
       }
 
-      if (dados.carroTag > 0) {
-        texto += `- Carro com TAG: ${dados.carroTag}\n`;
-        const depsTag = Object.entries(dados.carroTagPorDepartamento);
-        if (depsTag.length > 0) {
-          texto += `- Carro com TAG por departamento:\n`;
-          depsTag.forEach(([dep, qtd]) => {
-            texto += `  • ${dep}: ${qtd}\n`;
-          });
+      texto += `- Uso da TAG (total): ${r.carroTag} uso(s)\n`;
+      if (Object.keys(r.carroTagPorDepartamento).length > 0) {
+        texto += `- Uso da TAG por departamento:\n`;
+        for (let depto in r.carroTagPorDepartamento) {
+          texto += `    • ${depto}: ${r.carroTagPorDepartamento[depto]} uso(s)\n`;
         }
       }
 
-      if (dados.xerox > 0) texto += `- Cópias/xerox: ${dados.xerox}\n`;
-      if (dados.refeicoes > 0) texto += `- Refeições: ${dados.refeicoes}\n`;
-      if (dados.hospedagemDias > 0) texto += `- Dias de hospedagem: ${dados.hospedagemDias}\n`;
-      texto += `\n`;
-    });
+      texto += `- Lavanderia: ${r.lavanderia} lavagem(ns)\n`;
+      texto += `- Xerox: ${r.xerox} cópia(s)\n`;
+      texto += `- Refeições: ${r.refeicoes} refeição(ões)\n`;
+      texto += `- Hospedagem: ${r.hospedagemDias} dia(s)\n\n`;
+    }
 
-    document.getElementById('relatorio').textContent = texto || 'Nenhum dado no período.';
-
-  } catch (err) {
-    console.error('Erro na geração do relatório:', err);
-    document.getElementById('relatorio').textContent = 'Erro ao gerar relatório.';
+    document.getElementById('relatorio').textContent = texto;
   }
-}
 </script>
 <script>
   async function prepararRegistro() {
@@ -877,6 +915,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
