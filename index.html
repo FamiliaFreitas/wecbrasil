@@ -408,12 +408,20 @@ async function carregarListaUsuarios() {
   const lista = document.getElementById('listaUsuarios');
   lista.innerHTML = '';
 
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error || !data.session) {
+    alert('Usuário não autenticado.');
+    return;
+  }
+
+  const token = data.session.access_token;
+
   try {
-    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-ts', {
+    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro', {
       method: 'GET',
       headers: {
-        // Nenhuma chave secreta aqui!
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token}`
       }
     });
 
@@ -438,6 +446,7 @@ async function carregarListaUsuarios() {
     alert('Erro na comunicação com o servidor: ' + error.message);
   }
 }
+
 
 async function excluirUsuario(user_id) {
   if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
@@ -906,6 +915,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
