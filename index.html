@@ -556,24 +556,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const inicio = dataInicialISO ? new Date(dataInicialISO) : null;
     const fim = dataFinalISO ? new Date(dataFinalISO) : null;
 
-    // 1. Buscar todos os usuários (mapa de user_id -> nome)
-   const { data: usuarios, error: errorUsuarios } = await supabase
-  .from('usuarios')
-  .select('user_id, nome');
-
-if (errorUsuarios) {
-  console.error('Erro ao buscar usuários:', errorUsuarios);
-  document.getElementById('relatorio').textContent = 'Erro ao gerar relatório (usuários).';
-  return;
-}
-
-console.log('Usuários:', usuarios);  // <-- aqui
-const mapaUsuarios = {};
-usuarios.forEach(u => {
-  mapaUsuarios[u.user_id] = u.nome || u.user_id;
-});
-console.log('Mapa de usuários:', mapaUsuarios);  // <-- aqui
-
     // 2. Buscar registros **APENAS UMA VEZ** com datas convertidas
     const { data: registros, error } = await supabase
      .from('registros')
@@ -595,7 +577,7 @@ console.log('Mapa de usuários:', mapaUsuarios);  // <-- aqui
     // 3. Gerar resumo
     const resumo = {};
     registros.forEach(reg => {
-      const nome = mapaUsuarios[reg.user_id] || reg.user_id;
+      const nome = reg.nome || reg.user_id;
 
       if (!resumo[nome]) {
         resumo[nome] = {
@@ -915,6 +897,7 @@ console.log('Mapa de usuários:', mapaUsuarios);  // <-- aqui
 </script>
 </body>
 </html>
+
 
 
 
