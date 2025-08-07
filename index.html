@@ -403,7 +403,9 @@ async function carregarUsuario() {
     document.getElementById('gerenciarUsuariosCard').classList.remove('hidden');
     carregarListaUsuarios(); // essa função você já deve ter
   }
-}async function carregarListaUsuarios() {
+}
+
+async function carregarListaUsuarios() {
   const lista = document.getElementById('listaUsuarios');
   lista.innerHTML = '';
 
@@ -910,6 +912,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
