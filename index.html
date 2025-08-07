@@ -50,22 +50,20 @@
 
     <!-- Cadastro de usuários (somente para admin) -->
 <div class="card mb-4 hidden" id="cadastroCard">
-<div class="card mb-4 hidden" id="cadastroCard">
-  <div class="card-header">Cadastro de Usuário</div>
-  <div class="card-body">
-    <form id="formMissionario">
-      <input type="text" class="form-control mb-2" id="nomeMissionario" placeholder="Nome do usuário" required>
-      <input type="email" class="form-control mb-2" id="emailMissionario" placeholder="Email" required>
-      <input type="password" class="form-control mb-2" id="senhaMissionario" placeholder="Senha" required>
-      <select class="form-select mb-2" id="tipoUsuario">
-        <option value="comum">Usuário</option>
-        <option value="admin">Administrador</option>
-      </select>
-      <button type="submit" class="btn btn-primary">Cadastrar</button>
-    </form>
-  </div>
-</div>
-
+      <div class="card-header">Cadastro de Usuário</div>
+      <div class="card-body">
+        <form id="formMissionario">
+          <input type="text" class="form-control mb-2" id="nomeMissionario" placeholder="Nome do usuário" required>
+          <input type="password" class="form-control mb-2" id="senhaMissionario" placeholder="Senha" required>
+          <select class="form-select mb-2" id="tipoUsuario">
+            <option value="comun">Usuário</option>
+            <option value="admin">Administrador</option>
+          </select>
+          <button type="submit" class="btn btn-primary">Cadastrar</button>
+        </form>
+      </div>
+    </div>
+    
     <!-- Alterar senha -->
     <div class="card mb-4 hidden" id="alterarSenhaCard">
       <div class="card-header">Alterar Senha</div>
@@ -932,6 +930,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
