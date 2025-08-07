@@ -451,10 +451,21 @@ async function carregarListaUsuarios() {
 async function excluirUsuario(user_id) {
   if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
-  const res = await fetch('/api/excluir-usuario-ts', {
+  const {
+    data: { session },
+    error: sessionError
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    alert('Usuário não autenticado.');
+    return;
+  }
+
+  const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/excluir-usuario-ts', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`
     },
     body: JSON.stringify({ user_id }),
   });
@@ -468,6 +479,7 @@ async function excluirUsuario(user_id) {
   alert('Usuário excluído com sucesso.');
   carregarListaUsuarios();
 }
+
 
   // Logout com Supabase
 async function logout() {
@@ -915,6 +927,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
