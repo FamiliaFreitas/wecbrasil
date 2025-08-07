@@ -859,44 +859,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // O admin cria a conta via signUp (não precisa de service_role)
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password: senha,
-    options: {
-      data: { nome, tipo }
+  try {
+    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/criar-usuario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, email, senha, tipo })
+    });
+
+    if (!res.ok) {
+      const erro = await res.text();
+      alert('Erro ao cadastrar: ' + erro);
+      return;
     }
-  });
 
-  if (signUpError) {
-    alert('Erro ao criar usuário: ' + signUpError.message);
-    return;
+    alert(`Usuário "${nome}" cadastrado com sucesso como "${tipo}".`);
+    document.getElementById('formMissionario').reset();
+    carregarListaUsuarios(); // se tiver essa função
+  } catch (err) {
+    alert('Erro ao conectar com o servidor.');
+    console.error(err);
   }
-
-  const userId = signUpData?.user?.id;
-
-  if (!userId) {
-    alert('Usuário criado, mas não foi possível obter o ID.');
-    return;
-  }
-
-  // Salva os dados adicionais na tabela "usuarios"
-  const { error: insertError } = await supabase
-    .from('usuarios')
-    .insert([{ user_id: userId, nome, email, tipo }]);
-
-  if (insertError) {
-    alert('Erro ao salvar dados do usuário: ' + insertError.message);
-    return;
-  }
-
-  alert(`Usuário "${nome}" cadastrado com sucesso como "${tipo}".`);
-  document.getElementById('formMissionario').reset();
-  carregarListaUsuarios(); // atualiza a lista na tela, se tiver
 });
 </script>
 </body>
 </html>
+
 
 
 
