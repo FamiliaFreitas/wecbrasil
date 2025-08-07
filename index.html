@@ -888,6 +888,13 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
   const senha = document.getElementById('senhaMissionario').value;
   const tipo = document.getElementById('tipoUsuario').value;
 
+console.log('Tipo selecionado:', tipo);  // <--- Aqui
+
+  if (!nome || !email || !senha || !tipo) {
+    alert('Preencha todos os campos.');
+    return;
+  }
+    
   if (!nome || !email || !senha || !tipo) {
     alert('Preencha todos os campos.');
     return;
@@ -931,6 +938,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
