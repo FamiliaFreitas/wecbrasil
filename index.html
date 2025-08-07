@@ -415,6 +415,7 @@ async function carregarListaUsuarios() {
     return;
   }
 
+  // Verifica se é admin
   const { data: usuarioLogado, error: erroUsuario } = await supabase
     .from("usuarios")
     .select("tipo")
@@ -426,11 +427,22 @@ async function carregarListaUsuarios() {
     return;
   }
 
-  const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-ts');
+  // Coloque seu serviceRoleKey aqui:
+  const serviceRoleKey = 'SUA_SERVICE_ROLE_KEY_AQUI';
+
+  // Fetch com token no header Authorization:
+  const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-ts', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${serviceRoleKey}`
+    }
+  });
+
   if (!res.ok) {
     alert('Erro ao carregar lista de usuários.');
     return;
   }
+
   const usuarios = await res.json();
 
   usuarios.forEach((u) => {
@@ -913,6 +925,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
