@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.3";
 serve(async (req)=>{
   if (req.method !== "POST") {
     return new Response("Method not allowed", {
