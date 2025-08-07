@@ -254,13 +254,27 @@ document.getElementById('formCadastroIndividual')?.addEventListener('submit', as
     return;
   }
 
-  const { error: insertError } = await supabase
+  // ✅ Verificar se já existe esse user_id na tabela 'usuarios'
+  const { data: existingUser, error: fetchError } = await supabase
     .from('usuarios')
-    .insert([{ user_id: userId, nome, tipo: 'comum', email }]);
+    .select('user_id')
+    .eq('user_id', userId)
+    .single();
 
-  if (insertError) {
-    alert('Erro ao salvar dados do usuário: ' + insertError.message);
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    alert('Erro ao verificar usuário existente: ' + fetchError.message);
     return;
+  }
+
+  if (!existingUser) {
+    const { error: insertError } = await supabase
+      .from('usuarios')
+      .insert([{ user_id: userId, nome, tipo: 'comum', email }]);
+
+    if (insertError) {
+      alert('Erro ao salvar dados do usuário: ' + insertError.message);
+      return;
+    }
   }
 
   alert('Cadastro realizado com sucesso. Faça login.');
@@ -268,7 +282,7 @@ document.getElementById('formCadastroIndividual')?.addEventListener('submit', as
   document.getElementById('btnVoltarLogin')?.click();
 });
 
-  verificarLogin();
+verificarLogin();
 </script>     
 <script>
 function mostrarCamposServico() {
@@ -893,6 +907,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
 
 
