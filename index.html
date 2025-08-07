@@ -894,13 +894,13 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
   }
 
   try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error || !data?.session?.access_token) {
+    const { data: sessionData, error } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    if (!token) {
       alert('Usuário não autenticado.');
       return;
     }
-
-    const token = data.session.access_token;
 
     const response = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/criar-usuario-ts', {
       method: 'POST',
@@ -919,9 +919,11 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 
     alert('Usuário cadastrado com sucesso!');
     document.getElementById('formMissionario').reset();
+
     if (typeof carregarListaUsuarios === 'function') {
       carregarListaUsuarios();
     }
+
   } catch (error) {
     alert('Erro ao cadastrar: ' + error.message);
   }
@@ -929,6 +931,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
