@@ -418,7 +418,7 @@ async function carregarListaUsuarios() {
   const token = data.session.access_token;
 
   try {
-    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro-ts', {
+    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -446,7 +446,7 @@ async function carregarListaUsuarios() {
     alert('Erro na comunicação com o servidor: ' + error.message);
   }
 }
-
+  
 async function excluirUsuario(user_id) {
   if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
 
@@ -932,6 +932,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
