@@ -938,50 +938,38 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
       alert('Erro ao cadastrar: ' + error.message);
     }
   });
+
+  async function alterarPermissao(user_id, campo, valor) {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    alert('Usuário não autenticado.');
+    return;
+  }
+
+  try {
+    const response = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/alterar-permissao', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ user_id, campo, valor })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      alert('Erro ao alterar permissão: ' + err);
+      return;
+    }
+
+    alert('Permissão alterada com sucesso!');
+    carregarListaUsuarios();
+
+  } catch (error) {
+    alert('Erro na comunicação com o servidor: ' + error.message);
+  }
+}
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
