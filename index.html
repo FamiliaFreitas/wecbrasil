@@ -430,6 +430,12 @@ async function carregarListaUsuarios() {
 
     const usuarios = await res.json();
 
+    if (!Array.isArray(usuarios)) {
+      console.error('Resposta inesperada do servidor:', usuarios);
+      alert('O servidor não retornou a lista de usuários corretamente.');
+      return;
+    }
+
     usuarios.forEach((u) => {
       const li = document.createElement('li');
       li.className = 'list-group-item d-flex justify-content-between align-items-center';
@@ -449,37 +455,6 @@ async function carregarListaUsuarios() {
       `;
       lista.appendChild(li);
     });
-  } catch (error) {
-    alert('Erro na comunicação com o servidor: ' + error.message);
-  }
-}
-
-async function alterarPermissao(userId, campo, valor) {
-  const { data, error } = await supabase.auth.getSession();
-  if (error || !data.session) {
-    alert('Usuário não autenticado.');
-    return;
-  }
-
-  const token = data.session.access_token;
-
-  try {
-    const res = await fetch(`https://xqwubmknwvvonjzaecmk.functions.supabase.co/alterar-permissao-usuario`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ userId, campo, valor })
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      alert('Erro ao alterar permissão: ' + err);
-      return;
-    }
-
-    carregarListaUsuarios(); // Atualiza lista
   } catch (error) {
     alert('Erro na comunicação com o servidor: ' + error.message);
   }
@@ -970,6 +945,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
