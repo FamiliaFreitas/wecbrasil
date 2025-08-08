@@ -418,7 +418,7 @@ async function carregarListaUsuarios() {
   const token = data.session.access_token;
 
   try {
-    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro', {
+    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro-ts', {
       method: 'GET',
       headers: {
         'Authorization': Bearer ${token}
@@ -932,6 +932,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
