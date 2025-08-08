@@ -13,23 +13,45 @@
   <div class="container">
     <h1 class="mb-4">Registro de Serviços - WEC Brasil</h1>   
     <!-- Login -->
-    <div class="card mb-4" id="loginCard">
-      <div class="card-header">Login</div>
-      <div class="card-body">
-        <form id="formLogin">
-          <input type="text" class="form-control mb-2" id="loginUsuario" placeholder="Email" required>
-          <div class="input-group mb-2">
-             <input type="password" class="form-control" id="loginSenha" placeholder="Senha" required>
-             <button type="button" class="btn btn-outline-secondary" id="toggleLoginSenha">👁️</button>
-          </div>
-          <button type="submit" class="btn btn-primary">Entrar</button>
-        </form>
-        <div class="mt-3">
-          <span>Não tem conta?</span>
-          <button class="btn btn-link p-0" id="btnMostrarCadastro">Cadastre-se</button>
-        </div>
-      </div>
-    </div>
+    <div class="card mb-4" id="relatorioGeralCard" style="display:none;">
+  <div class="card-header">Relatório Geral</div>
+  <div class="card-body">
+    <!-- Conteúdo do relatório geral -->
+    <p>Aqui vai o conteúdo do relatório geral.</p>
+  </div>
+</div>
+
+<div class="card mb-4" id="relatorioRefeicoesCard" style="display:none;">
+  <div class="card-header">Relatório Refeições</div>
+  <div class="card-body">
+    <!-- Conteúdo do relatório de refeições -->
+    <p>Aqui vai o conteúdo do relatório de refeições.</p>
+  </div>
+</div>
+
+<div class="card mb-4" id="cadastroCard" style="display:none;">
+  <div class="card-header">Cadastro</div>
+  <div class="card-body">
+    <!-- Conteúdo do cadastro de usuários -->
+    <p>Formulário de cadastro aqui.</p>
+  </div>
+</div>
+
+<div class="card mb-4" id="gerenciarUsuariosCard" style="display:none;">
+  <div class="card-header">Gerenciar Usuários</div>
+  <div class="card-body">
+    <!-- Conteúdo para administrar usuários -->
+    <p>Lista e controle de usuários.</p>
+  </div>
+</div>
+
+<div class="card mb-4" id="registroCard" style="display:none;">
+  <div class="card-header">Registro de Uso</div>
+  <div class="card-body">
+    <!-- Conteúdo do registro de uso -->
+    <p>Formulário para registrar uso de serviços.</p>
+  </div>
+</div>
 
     <!-- Cadastro individual -->
 <div class="card mb-4 hidden" id="cadastroIndividualCard">
@@ -1002,6 +1024,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
