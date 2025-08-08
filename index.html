@@ -428,13 +428,9 @@ async function carregarListaUsuarios() {
       return;
     }
 
-    const usuarios = await res.json();
-
-    if (!Array.isArray(usuarios)) {
-      console.error('Resposta inesperada do servidor:', usuarios);
-      alert('O servidor não retornou a lista de usuários corretamente.');
-      return;
-    }
+    const dados = await res.json();
+    // Pega o array dentro do objeto 'usuarios', ou um array vazio se não existir
+    const usuarios = dados.usuarios || [];
 
     usuarios.forEach((u) => {
       const li = document.createElement('li');
@@ -945,6 +941,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
