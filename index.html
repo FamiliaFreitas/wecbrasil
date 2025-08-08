@@ -441,7 +441,7 @@ async function carregarListaUsuarios() {
   const usuarioAtual = sessao.session.user;
 
   try {
-    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro-ts', {
+    const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -1012,6 +1012,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
