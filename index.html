@@ -421,7 +421,7 @@ async function carregarListaUsuarios() {
     const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro-ts', {
       method: 'GET',
       headers: {
-        'Authorization': Bearer ${token}
+        'Authorization': `Bearer ${token}`
       }
     });
 
@@ -436,10 +436,10 @@ async function carregarListaUsuarios() {
     usuarios.forEach((u) => {
       const li = document.createElement('li');
       li.className = 'list-group-item d-flex justify-content-between align-items-center';
-      li.innerHTML = 
+      li.innerHTML = `
         <span>${u.nome || u.user_id} (${u.tipo})</span>
         <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.user_id}')">Excluir</button>
-      ;
+      `;
       lista.appendChild(li);
     });
   } catch (error) {
@@ -932,6 +932,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
