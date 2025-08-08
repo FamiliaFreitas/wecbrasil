@@ -159,66 +159,89 @@
 
   // Detecta usuário logado e mostra os cards certos
   async function verificarLogin() {
-      const { data: { user }, error } = await supabase.auth.getUser();
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-      if (!user) {
-        document.getElementById('loginCard').classList.remove('hidden');
-        return;
-      }
+  if (!user) {
+    document.getElementById('loginCard').classList.remove('hidden');
+    return;
+  }
 
-      const { data: perfil, error: perfilError } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-    
-      if (perfilError || !perfil) {
-        alert('Erro ao carregar perfil: ' + (perfilError?.message || 'Perfil não encontrado.'));
-        await supabase.auth.signOut();
-        return location.reload();
-      }
+  const { data: perfil, error: perfilError } = await supabase
+    .from('usuarios')
+    .select('tipo, nome, liberado_relatorio_geral, liberado_relatorio_refeicoes')
+    .eq('user_id', user.id)
+    .single();
 
-      const usuarioLogado = {
-        id: user.id,
-        email: user.email,
-        tipo: perfil.tipo,
-        nome: perfil.nome
-      };
+  if (perfilError || !perfil) {
+    alert('Erro ao carregar perfil: ' + (perfilError?.message || 'Perfil não encontrado.'));
+    await supabase.auth.signOut();
+    return location.reload();
+  }
 
-      localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado));
-      document.getElementById('usuarioLogado').textContent = usuarioLogado.nome;
+  const usuarioLogado = {
+    id: user.id,
+    email: user.email,
+    tipo: perfil.tipo,
+    nome: perfil.nome,
+    liberado_relatorio_geral: perfil.liberado_relatorio_geral,
+    liberado_relatorio_refeicoes: perfil.liberado_relatorio_refeicoes
+  };
 
-      if (usuarioLogado.tipo === 'admin') {
-        document.getElementById('relatorioCard')?.classList.remove('hidden');
-        document.getElementById('cadastroCard')?.classList.remove('hidden');
-        document.getElementById('refeicoesCard')?.classList.remove('hidden');
-        document.getElementById('gerenciarUsuariosCard')?.classList.remove('hidden');
-      }
+  localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado));
+  document.getElementById('usuarioLogado').textContent = usuarioLogado.nome;
 
-      document.getElementById('registroCard')?.classList.remove('hidden');
-      document.getElementById('loginCard')?.classList.add('hidden');
-      document.getElementById('cadastroIndividualCard')?.classList.add('hidden');
-    }
+  // Mostrar cards conforme permissões
+  if (usuarioLogado.tipo === 'admin') {
+    document.getElementById('relatorioCard')?.classList.remove('hidden');
+    document.getElementById('cadastroCard')?.classList.remove('hidden');
+    document.getElementById('refeicoesCard')?.classList.remove('hidden');
+    document.getElementById('gerenciarUsuariosCard')?.classList.remove('hidden');
+  }
 
-    document.getElementById('formLogin')?.addEventListener('submit', async function (e) {
-      e.preventDefault();
+  if (usuarioLogado.liberado_relatorio_geral) {
+    document.getElementById('relatorioGeralCard')?.classList.remove('hidden');
+  } else {
+    document.getElementById('relatorioGeralCard')?.classList.add('hidden');
+  }
 
-      const email = document.getElementById('loginUsuario').value;
-      const senha = document.getElementById('loginSenha').value;
+  if (usuarioLogado.liberado_relatorio_refeicoes) {
+    document.getElementById('relatorioRefeicoesCard')?.classList.remove('hidden');
+  } else {
+    document.getElementById('relatorioRefeicoesCard')?.classList.add('hidden');
+  }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: senha
-      });
+  document.getElementById('registroCard')?.classList.remove('hidden');
+  document.getElementById('loginCard')?.classList.add('hidden');
+  document.getElementById('cadastroIndividualCard')?.classList.add('hidden');
+}
 
-      if (error) {
-        alert('Erro ao fazer login: ' + error.message);
-        return;
-      }
+// Evento do formLogin permanece igual, só recarrega a página pra chamar verificarLogin no load
 
-      location.reload();
-    });
+document.getElementById('formLogin')?.addEventListener('submit', async function (e) {
+  e.preventDefault();
 
+  const email = document.getElementById('loginUsuario').value;
+  const senha = document.getElementById('loginSenha').value;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password: senha
+  });
+
+  if (error) {
+    alert('Erro ao fazer login: ' + error.message);
+    return;
+  }
+
+  location.reload();
+});
+
+// No seu carregamento da página, chame verificarLogin
+
+document.addEventListener('DOMContentLoaded', () => {
+  verificarLogin();
+});
+  
 document.getElementById('formCadastroIndividual')?.addEventListener('submit', async function (e) {
   e.preventDefault();
 
@@ -979,5 +1002,6 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
