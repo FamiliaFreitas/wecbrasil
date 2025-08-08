@@ -409,7 +409,6 @@ async function carregarListaUsuarios() {
   lista.innerHTML = '';
 
   const { data, error } = await supabase.auth.getSession();
-
   if (error || !data.session) {
     alert('Usuário não autenticado.');
     return;
@@ -420,9 +419,7 @@ async function carregarListaUsuarios() {
   try {
     const res = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/listar-usuarios-seguro', {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (!res.ok) {
@@ -438,10 +435,51 @@ async function carregarListaUsuarios() {
       li.className = 'list-group-item d-flex justify-content-between align-items-center';
       li.innerHTML = `
         <span>${u.nome || u.user_id} (${u.tipo})</span>
-        <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.user_id}')">Excluir</button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm ${u.liberado_relatorio_geral ? 'btn-success' : 'btn-secondary'}" 
+                  onclick="alterarPermissao('${u.user_id}', 'liberado_relatorio_geral', ${!u.liberado_relatorio_geral})">
+            Relatório Geral
+          </button>
+          <button class="btn btn-sm ${u.liberado_relatorio_refeicoes ? 'btn-success' : 'btn-secondary'}" 
+                  onclick="alterarPermissao('${u.user_id}', 'liberado_relatorio_refeicoes', ${!u.liberado_relatorio_refeicoes})">
+            Relatório Refeições
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.user_id}')">Excluir</button>
+        </div>
       `;
       lista.appendChild(li);
     });
+  } catch (error) {
+    alert('Erro na comunicação com o servidor: ' + error.message);
+  }
+}
+
+async function alterarPermissao(userId, campo, valor) {
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session) {
+    alert('Usuário não autenticado.');
+    return;
+  }
+
+  const token = data.session.access_token;
+
+  try {
+    const res = await fetch(`https://xqwubmknwvvonjzaecmk.functions.supabase.co/alterar-permissao-usuario`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId, campo, valor })
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      alert('Erro ao alterar permissão: ' + err);
+      return;
+    }
+
+    carregarListaUsuarios(); // Atualiza lista
   } catch (error) {
     alert('Erro na comunicação com o servidor: ' + error.message);
   }
@@ -932,6 +970,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
