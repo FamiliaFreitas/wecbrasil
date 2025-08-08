@@ -199,15 +199,15 @@
   }
 
   if (usuarioLogado.liberado_relatorio_geral) {
-    document.getElementById('relatorioGeralCard')?.classList.remove('hidden');
+    document.getElementById('relatorioCard')?.classList.remove('hidden');
   } else {
-    document.getElementById('relatorioGeralCard')?.classList.add('hidden');
+    document.getElementById('relatorioCard')?.classList.add('hidden');
   }
 
   if (usuarioLogado.liberado_relatorio_refeicoes) {
-    document.getElementById('relatorioRefeicoesCard')?.classList.remove('hidden');
+    document.getElementById('refeicoesCard')?.classList.remove('hidden');
   } else {
-    document.getElementById('relatorioRefeicoesCard')?.classList.add('hidden');
+    document.getElementById('refeicoesCard')?.classList.add('hidden');
   }
 
   document.getElementById('registroCard')?.classList.remove('hidden');
@@ -1002,6 +1002,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
