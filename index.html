@@ -1136,6 +1136,7 @@ async function carregarListaRegistros(limite = 5) {
         <td>${detalhes}</td>
         <td>
           <button class="btn btn-sm btn-info me-1" onclick="verRegistro('${reg.id}')">Ver</button>
+          <button class="btn btn-sm btn-warning me-1" onclick="editarRegistro('${reg.id}')">Editar</button>
           <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${reg.id}')">Excluir</button>
         </td>
       </tr>
@@ -1190,9 +1191,55 @@ async function verRegistro(id) {
   // usar alert simples — se preferir eu coloco modal Bootstrap
   alert(texto);
 }
+
+async function editarRegistro(id) {
+  // Buscar dados atuais do registro
+  const { data, error } = await supabase
+    .from('registros')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Erro ao buscar registro para editar:', error);
+    alert('Erro ao buscar registro.');
+    return;
+  }
+
+  // Simples prompt para teste — depois pode trocar por modal bonito
+  const novoTipo = prompt('Tipo:', data.tipo || '');
+  const novaDescricao = prompt('Descrição:', data.descricao || '');
+  const novaData = prompt('Data (AAAA-MM-DD):', data.data ? data.data.split('T')[0] : '');
+
+  if (!novoTipo || !novaData) {
+    alert('Tipo e Data são obrigatórios!');
+    return;
+  }
+
+  // Chamar sua Edge Function para atualizar
+  const resp = await fetch('https://SEU_PROJETO.supabase.co/functions/v1/editar-servico', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id,
+      tipo: novoTipo,
+      descricao: novaDescricao,
+      data: novaData
+    })
+  });
+
+  const result = await resp.json();
+  if (resp.ok) {
+    alert('Registro atualizado com sucesso!');
+    carregarListaRegistros(); // recarrega lista
+  } else {
+    alert('Erro ao atualizar: ' + (result.error || 'desconhecido'));
+  }
+}
 </script>
 </body>
 </html>
+
 
 
 
