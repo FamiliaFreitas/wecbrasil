@@ -152,20 +152,6 @@
        <ul id="listaUsuarios" class="list-group"></ul>
      </div>
   </div>
-
-<table class="table table-bordered" id="tabelaServicos">
- <thead>
-    <tr>
-      <th>Data</th>
-      <th>Tipo</th>
-      <th>Descrição</th>
-      <th>Ações</th>
-    </tr>
-  </thead>
-  <tbody id="listaServicos">
-    <!-- Linhas serão adicionadas pelo JS -->
-  </tbody>
-</table>
       
       <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1034,9 +1020,93 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
     alert('Erro na comunicação com o servidor: ' + error.message);
   }
 }
+
+async function carregarServicos() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data, error } = await supabase
+    .from('servicos')
+    .select('*')
+    .eq('usuario_id', user.id)
+    .order('data', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao carregar serviços:', error);
+    return;
+  }
+
+  const lista = document.getElementById('listaServicos');
+  lista.innerHTML = '';
+
+  data.forEach(servico => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${servico.data}</td>
+      <td>${servico.tipo}</td>
+      <td>${servico.descricao}</td>
+      <td>
+        <button class="btn btn-warning btn-sm" onclick="editarServico('${servico.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirServico('${servico.id}')">Excluir</button>
+      </td>
+    `;
+    lista.appendChild(tr);
+  });
+}
+
+async function excluirServico(id) {
+  if (!confirm('Tem certeza que deseja excluir este serviço?')) return;
+
+  const { error } = await supabase
+    .from('servicos')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    alert('Erro ao excluir serviço');
+    console.error(error);
+  } else {
+    alert('Serviço excluído com sucesso!');
+    carregarServicos();
+  }
+}
+
+async function editarServico(id) {
+  const { data, error } = await supabase
+    .from('servicos')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    alert('Erro ao carregar serviço para edição');
+    console.error(error);
+    return;
+  }
+
+  const novaDescricao = prompt('Nova descrição:', data.descricao);
+  if (!novaDescricao) return;
+
+  const { error: updateError } = await supabase
+    .from('servicos')
+    .update({ descricao: novaDescricao })
+    .eq('id', id);
+
+  if (updateError) {
+    alert('Erro ao editar serviço');
+    console.error(updateError);
+  } else {
+    alert('Serviço atualizado com sucesso!');
+    carregarServicos();
+  }
+}
+
+// Carrega registros ao abrir a página
+carregarServicos();
 </script>
 </body>
 </html>
+
 
 
 
