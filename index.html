@@ -108,6 +108,31 @@
         </form>
       </div>
     </div>
+
+      <!-- Listagem de Registros (cole abaixo do registroCard) -->
+<div class="card mb-4 hidden" id="listagemRegistrosCard">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Listagem de Registros</span>
+    <small class="text-muted">Meus registros recentes</small>
+  </div>
+  <div class="card-body">
+    <table class="table table-sm table-bordered" id="tabelaRegistros">
+      <thead>
+        <tr>
+          <th style="width:120px">Data</th>
+          <th>Tipo</th>
+          <th>Detalhes</th>
+          <th style="width:140px">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="listaRegistros">
+        <tr>
+          <td colspan="4" class="text-center text-muted">Carregando...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
       
     <!-- Área para relatórios (somente admin) -->
     <div class="card hidden" id="relatorioCard">
@@ -1021,32 +1046,6 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
   }
 }
 
-<!-- Listagem de Registros (cole abaixo do registroCard) -->
-<div class="card mb-4 hidden" id="listagemRegistrosCard">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <span>Listagem de Registros</span>
-    <small class="text-muted">Meus registros recentes</small>
-  </div>
-  <div class="card-body">
-    <table class="table table-sm table-bordered" id="tabelaRegistros">
-      <thead>
-        <tr>
-          <th style="width:120px">Data</th>
-          <th>Tipo</th>
-          <th>Detalhes</th>
-          <th style="width:140px">Ações</th>
-        </tr>
-      </thead>
-      <tbody id="listaRegistros">
-        <tr>
-          <td colspan="4" class="text-center text-muted">Carregando...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<script>
 /* ---------- Helpers ---------- */
 function formatDateISOtoBR(iso) {
   if (!iso) return '';
@@ -1172,6 +1171,7 @@ async function verRegistro(id) {
 </script>
 </body>
 </html>
+
 
 
 
