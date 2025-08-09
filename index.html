@@ -1210,31 +1210,37 @@ async function excluirRegistroSupabase(id) {
 let registroEditando = null;
 
 async function editarRegistro(id) {
-  const { data, error } = await supabase
-    .from('registros')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error('Erro ao buscar registro para editar:', error);
-    alert('Erro ao buscar registro.');
+  const registro = listaCache.find(r => r.id === id);
+  if (!registro) {
+    alert('Registro não encontrado.');
     return;
   }
 
-  registroEditando = id;
-  document.getElementById('edit-id').value = id;
-  document.getElementById('edit-tipo').value = data.tipo || '';
-  document.getElementById('edit-descricao').value = data.descricao || '';
-  document.getElementById('edit-data').value = data.data ? data.data.slice(0, 16) : '';
+  registroEditando = registro;
 
-  new bootstrap.Modal(document.getElementById('modalEditarRegistro')).show();
+  document.getElementById('edit-id').value = registro.id;
+  document.getElementById('edit-tipo').value = registro.tipo || '';
+  document.getElementById('edit-descricao').value = registro.descricao || '';
+
+  if (registro.data) {
+    // Ajusta para datetime-local (AAAA-MM-DDTHH:mm)
+    const dt = new Date(registro.data);
+    const dtLocal = dt.toISOString().slice(0,16);
+    document.getElementById('edit-data').value = dtLocal;
+  } else {
+    document.getElementById('edit-data').value = '';
+  }
+
+  // Mostrar modal Bootstrap
+  const modalEl = document.getElementById('modalEditarRegistro');
+  const modal = new bootstrap.Modal(modalEl);
+  modal.show();
 }
 
 async function salvarEdicao() {
   const id = document.getElementById('edit-id').value;
-  const tipo = document.getElementById('edit-tipo').value;
-  const descricao = document.getElementById('edit-descricao').value;
+  const tipo = document.getElementById('edit-tipo').value.trim();
+  const descricao = document.getElementById('edit-descricao').value.trim();
   const data = document.getElementById('edit-data').value;
 
   if (!tipo || !data) {
@@ -1242,19 +1248,24 @@ async function salvarEdicao() {
     return;
   }
 
-  const resp = await fetch('https://SEU_PROJETO.supabase.co/functions/v1/editar-servico', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, tipo, descricao, data })
-  });
+  try {
+    const resp = await fetch('https://xqwubmknwvvonjzaecmk.supabase.co/functions/v1/editar-servico', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, tipo, descricao, data })
+    });
 
-  const result = await resp.json();
-  if (resp.ok) {
+    const result = await resp.json();
+
+    if (!resp.ok) throw new Error(result.error || 'Erro desconhecido ao atualizar.');
+
+    // Fecha o modal e recarrega a lista
     bootstrap.Modal.getInstance(document.getElementById('modalEditarRegistro')).hide();
     alert('Registro atualizado com sucesso!');
-    carregarListaRegistros();
-  } else {
-    alert('Erro ao atualizar: ' + (result.error || 'desconhecido'));
+    await carregarListaRegistros();
+
+  } catch (err) {
+    alert('Erro ao atualizar: ' + err.message);
   }
 }
 </script>
@@ -1296,6 +1307,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
