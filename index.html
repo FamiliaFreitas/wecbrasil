@@ -1055,10 +1055,13 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 function gerarDescricaoDetalhada(reg) {
   if (!reg) return '';
 
-  switch (reg.tipo) {
+  // Normaliza tipo para comparação
+  const tipoNormalizado = (reg.tipo || '').toLowerCase().trim();
+
+  switch (tipoNormalizado) {
     case 'lavanderia': {
-      const lavagens = reg.qtdlavagens ?? 0;
-      const secagens = reg.qtdsecagens ?? 0;
+      const lavagens = Number(reg.qtdlavagens) || 0;
+      const secagens = Number(reg.qtdsecagens) || 0;
       let res = [];
       if (lavagens) res.push(`Lavagens: ${lavagens}`);
       if (secagens) res.push(`Secagens: ${secagens}`);
@@ -1068,7 +1071,7 @@ function gerarDescricaoDetalhada(reg) {
     case 'carro': {
       const kmIni = parseInt(reg.kminicial) || 0;
       const kmFim = parseInt(reg.kmfinal) || 0;
-      const km = (kmFim - kmIni) || 0;
+      const km = kmIni && kmFim ? kmFim - kmIni : 0;
       let res = [];
       if (kmIni && kmFim) res.push(`KM: ${kmIni} → ${kmFim} (${km} km)`);
       if (reg.uso) res.push(`Uso: ${reg.uso}`);
@@ -1101,24 +1104,15 @@ function gerarDescricaoDetalhada(reg) {
     }
 
     default:
-      return '-';
+      return reg.descricao || '-'; // fallback: mostra a descrição se nada bater
   }
 }
-  
-/* ---------- Helpers ---------- */
-function formatDateISOtoBR(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (isNaN(d)) return iso;
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-}
 
-/* ---------- CRUD na UI ---------- */
 document.addEventListener('DOMContentLoaded', async () => {
   await carregarListaRegistros();
 });
 
-let listaCache = []; // cache global para edição
+let listaCache = [];
 
 async function carregarListaRegistros(limite = 5) {
   try {
@@ -1151,28 +1145,41 @@ async function carregarListaRegistros(limite = 5) {
 
     let html = '';
     listaCache.forEach(reg => {
-      // Corrige data para formato brasileiro sem mudar o dia
       const dataExib = reg.data
         ? new Date(reg.data + "T00:00:00").toLocaleDateString("pt-BR", { timeZone: "UTC" })
         : "Sem data";
 
-      // Monta os detalhes do registro conforme campos disponíveis
       const detalhes = gerarDescricaoDetalhada(reg).replace(/</g, '&lt;');
       
       html += `
         <tr>
           <td>${dataExib}</td>
           <td>${reg.tipo || ''}</td>
-          <td>${detalhes.replace(/</g, '&lt;')}</td>
+          <td>${detalhes}</td>
           <td>
-            <button class="btn btn-sm btn-warning me-1" onclick="editarRegistro('${reg.id}')">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${reg.id}')">Excluir</button>
+            <button class="btn btn-sm btn-warning me-1" onclick="editarRegistro('${String(reg.id)}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${String(reg.id)}')">Excluir</button>
           </td>
         </tr>
       `;
     });
 
     tbody.innerHTML = html;
+
+    const verTodosBtn = document.getElementById('btnVerTodos');
+    if (limite && verTodosBtn) {
+      verTodosBtn.classList.remove('hidden');
+    } else if (verTodosBtn) {
+      verTodosBtn.classList.add('hidden');
+    }
+
+  } catch (err) {
+    console.error("Erro ao carregar registros:", err.message);
+    document.getElementById('listaRegistros').innerHTML = `
+      <tr><td colspan="4" class="text-center text-danger">Erro ao carregar registros.</td></tr>`;
+  }
+  }
+  
 
     // Mostrar botão "Ver todos" se houver limite
     const verTodosBtn = document.getElementById('btnVerTodos');
@@ -1205,36 +1212,6 @@ async function excluirRegistroSupabase(id) {
     alert('Registro excluído com sucesso.');
     carregarListaRegistros();
   }
-}
-
-let registroEditando = null;
-
-async function editarRegistro(id) {
-  const registro = listaCache.find(r => String(r.id) === String(id));
-  if (!registro) {
-    alert('Registro não encontrado.');
-    return;
-  }
-
-  registroEditando = registro;
-
-  document.getElementById('edit-id').value = registro.id;
-  document.getElementById('edit-tipo').value = registro.tipo || '';
-  document.getElementById('edit-descricao').value = registro.descricao || '';
-
-  if (registro.data) {
-    // Ajusta para datetime-local (AAAA-MM-DDTHH:mm)
-    const dt = new Date(registro.data);
-    const dtLocal = dt.toISOString().slice(0,16);
-    document.getElementById('edit-data').value = dtLocal;
-  } else {
-    document.getElementById('edit-data').value = '';
-  }
-
-  // Mostrar modal Bootstrap
-  const modalEl = document.getElementById('modalEditarRegistro');
-  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-  modal.show();
 }
 
 async function salvarEdicao() {
@@ -1310,6 +1287,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
