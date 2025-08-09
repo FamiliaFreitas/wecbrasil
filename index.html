@@ -1060,8 +1060,8 @@ async function carregarServicos() {
       <td>${servico.tipo}</td>
       <td>${servico.descricao}</td>
       <td>
-        <button class="btn btn-warning btn-sm" onclick="editarServico('${servico.id}')">Editar</button>
-        <button class="btn btn-danger btn-sm" onclick="excluirServico('${servico.id}')">Excluir</button>
+        <button class="btn btn-warning btn-sm" onclick="editarRegistro('${servico.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirRegistro('${servico.id}')">Excluir</button>
       </td>
     `;
     lista.appendChild(tr);
@@ -1116,6 +1116,7 @@ async function editarRegistro(id) {
 </script>
 </body>
 </html>
+
 
 
 
