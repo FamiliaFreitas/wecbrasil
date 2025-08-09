@@ -1065,50 +1065,61 @@ document.addEventListener('DOMContentLoaded', async () => {
   await carregarListaRegistros();
 });
 
-async function carregarListaRegistros(limite = 5) {
-  const { data: { user } } = await supabase.auth.getUser();
-  const tbody = document.getElementById('listaRegistros');
+async function carregarListaRegistros() {
+  console.log("🔄 Iniciando carregamento da lista...");
 
+  // 1. Verifica autenticação
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError) {
+    console.error("❌ Erro ao obter usuário:", authError);
+    alert("Erro ao verificar autenticação.");
+    return;
+  }
   if (!user) {
-    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Usuário não autenticado.</td></tr>`;
+    console.warn("⚠ Nenhum usuário logado.");
+    alert("Usuário não autenticado.");
     return;
   }
+  console.log("👤 Usuário logado:", user.id);
 
-  // mostra o card
-  document.getElementById('listagemRegistrosCard').classList.remove('hidden');
-
+  // 2. Monta query
   let query = supabase
-    .from('registros')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('data', { ascending: false });
+    .from("registros")
+    .select("*")
+    .eq("user_id", user.id);
 
-  if (limite) {
-    query = query.limit(limite);
+  try {
+    query = query.order("data", { ascending: false });
+  } catch (e) {
+    console.warn("⚠ Não foi possível ordenar por 'data'. Tentando sem ordenação.");
   }
 
+  // 3. Busca dados
   const { data, error } = await query;
-
   if (error) {
-    console.error('Erro ao carregar registros:', error);
-    tbody.innerHTML = `<tr><td colspan="4" class="text-danger">Erro ao carregar registros.</td></tr>`;
+    console.error("❌ Erro ao carregar registros:", error);
+    alert("Erro ao carregar registros: " + error.message);
     return;
   }
 
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
-    return;
-  }
+  console.log(`📦 ${data.length} registros recebidos:`, data);
 
-  // montar linhas
-  let html = '';
+  // 4. Renderiza tabela (sem botão "Ver")
+  let html = "";
   data.forEach(reg => {
-    const dataExib = formatDateISOtoBR(reg.data || reg.entrada || '');
-    const detalhes = gerarDescricaoCurta(reg).replace(/</g, '&lt;');
+    const dataExib = reg.data
+      ? new Date(reg.data).toLocaleDateString("pt-BR")
+      : "Sem data";
+
+    const detalhes = (typeof gerarDescricaoCurta === "function"
+      ? gerarDescricaoCurta(reg)
+      : (reg.descricao || ""))
+      .replace(/</g, "&lt;");
+
     html += `
       <tr>
         <td>${dataExib}</td>
-        <td>${reg.tipo || ''}</td>
+        <td>${reg.tipo || ""}</td>
         <td>${detalhes}</td>
         <td>
           <button class="btn btn-sm btn-warning me-1" onclick="editarRegistro('${reg.id}')">Editar</button>
@@ -1118,15 +1129,8 @@ async function carregarListaRegistros(limite = 5) {
     `;
   });
 
-  tbody.innerHTML = html;
-
-  // Botão "Ver todos"
-  const verTodosBtn = document.getElementById('btnVerTodos');
-  if (limite && verTodosBtn) {
-    verTodosBtn.classList.remove('hidden');
-  } else if (verTodosBtn) {
-    verTodosBtn.classList.add('hidden');
-  }
+  document.getElementById("listaRegistros").innerHTML =
+    html || "<tr><td colspan='4'>Nenhum registro encontrado.</td></tr>";
 }
 
 /* Excluir registro pela tabela 'registros' no Supabase */
@@ -1236,6 +1240,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
