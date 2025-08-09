@@ -131,6 +131,11 @@
         </tr>
       </tbody>
     </table>
+    <div class="text-center mt-2">
+  <button id="btnVerTodos" class="btn btn-outline-primary btn-sm hidden" onclick="carregarListaRegistros(null)">
+    Ver todos
+  </button>
+    </div>
   </div>
 </div>
       
@@ -1084,8 +1089,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await carregarListaRegistros();
 });
 
-async function carregarListaRegistros() {
-  // espera supabase já inicializado (usa sua variável global `supabase`)
+async function carregarListaRegistros(limite = 5) {
   const { data: { user } } = await supabase.auth.getUser();
   const tbody = document.getElementById('listaRegistros');
 
@@ -1097,12 +1101,17 @@ async function carregarListaRegistros() {
   // mostra o card
   document.getElementById('listagemRegistrosCard').classList.remove('hidden');
 
-  // busca registros do usuário
-  const { data, error } = await supabase
+  let query = supabase
     .from('registros')
     .select('*')
     .eq('user_id', user.id)
     .order('data', { ascending: false });
+
+  if (limite) {
+    query = query.limit(limite);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Erro ao carregar registros:', error);
@@ -1134,6 +1143,14 @@ async function carregarListaRegistros() {
   });
 
   tbody.innerHTML = html;
+
+  // Botão "Ver todos"
+  const verTodosBtn = document.getElementById('btnVerTodos');
+  if (limite && verTodosBtn) {
+    verTodosBtn.classList.remove('hidden');
+  } else if (verTodosBtn) {
+    verTodosBtn.classList.add('hidden');
+  }
 }
 
 /* Excluir registro pela tabela 'registros' no Supabase */
@@ -1176,6 +1193,7 @@ async function verRegistro(id) {
 </script>
 </body>
 </html>
+
 
 
 
