@@ -1210,7 +1210,7 @@ async function excluirRegistroSupabase(id) {
 let registroEditando = null;
 
 async function editarRegistro(id) {
-  const registro = listaCache.find(r => r.id === id);
+  const registro = listaCache.find(r => String(r.id) === String(id));
   if (!registro) {
     alert('Registro não encontrado.');
     return;
@@ -1310,6 +1310,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
