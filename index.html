@@ -152,7 +152,22 @@
        <ul id="listaUsuarios" class="list-group"></ul>
      </div>
   </div>
-  <!-- Supabase -->
+
+<table class="table table-bordered" id="tabelaServicos">
+ <thead>
+    <tr>
+      <th>Data</th>
+      <th>Tipo</th>
+      <th>Descrição</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody id="listaServicos">
+    <!-- Linhas serão adicionadas pelo JS -->
+  </tbody>
+</table>
+      
+      <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // Inicialização segura do Supabase
@@ -219,20 +234,6 @@
   document.getElementById('loginCard')?.classList.add('hidden');
   document.getElementById('cadastroIndividualCard')?.classList.add('hidden');
 }
-
-<table class="table table-bordered" id="tabelaServicos">
- <thead>
-    <tr>
-      <th>Data</th>
-      <th>Tipo</th>
-      <th>Descrição</th>
-      <th>Ações</th>
-    </tr>
-  </thead>
-  <tbody id="listaServicos">
-    <!-- Linhas serão adicionadas pelo JS -->
-  </tbody>
-</table>
   
 // Evento do formLogin permanece igual, só recarrega a página pra chamar verificarLogin no load
 
@@ -1036,6 +1037,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
 </script>
 </body>
 </html>
+
 
 
 
