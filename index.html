@@ -1233,7 +1233,7 @@ async function editarRegistro(id) {
 
   // Mostrar modal Bootstrap
   const modalEl = document.getElementById('modalEditarRegistro');
-  const modal = new bootstrap.Modal(modalEl);
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
   modal.show();
 }
 
@@ -1260,7 +1260,10 @@ async function salvarEdicao() {
     if (!resp.ok) throw new Error(result.error || 'Erro desconhecido ao atualizar.');
 
     // Fecha o modal e recarrega a lista
-    bootstrap.Modal.getInstance(document.getElementById('modalEditarRegistro')).hide();
+    const modalEl = document.getElementById('modalEditarRegistro');
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+
     alert('Registro atualizado com sucesso!');
     await carregarListaRegistros();
 
@@ -1307,6 +1310,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
