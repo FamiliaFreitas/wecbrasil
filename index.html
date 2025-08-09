@@ -1052,6 +1052,59 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
   }
 }
 
+function gerarDescricaoDetalhada(reg) {
+  if (!reg) return '';
+
+  switch (reg.tipo) {
+    case 'lavanderia': {
+      const lavagens = reg.qtdlavagens ?? 0;
+      const secagens = reg.qtdsecagens ?? 0;
+      let res = [];
+      if (lavagens) res.push(`Lavagens: ${lavagens}`);
+      if (secagens) res.push(`Secagens: ${secagens}`);
+      return res.join(' · ') || '-';
+    }
+
+    case 'carro': {
+      const kmIni = parseInt(reg.kminicial) || 0;
+      const kmFim = parseInt(reg.kmfinal) || 0;
+      const km = (kmFim - kmIni) || 0;
+      let res = [];
+      if (kmIni && kmFim) res.push(`KM: ${kmIni} → ${kmFim} (${km} km)`);
+      if (reg.uso) res.push(`Uso: ${reg.uso}`);
+      if (reg.departamento) res.push(`Dept: ${reg.departamento}`);
+      if (reg.motorista) res.push(`Motorista: ${reg.motorista}`);
+      if (reg.qtdtag) res.push(`TAGs: ${reg.qtdtag}`);
+      return res.join(' · ') || '-';
+    }
+
+    case 'xerox': {
+      if (reg.qtd) return `Cópias: ${reg.qtd}`;
+      return '-';
+    }
+
+    case 'refeicoes': {
+      if (!Array.isArray(reg.dias) || reg.dias.length === 0) return 'Refeições (detalhes não disponíveis)';
+      return reg.dias
+        .filter(d => d.qtd)
+        .map(d => `${formatDateISOtoBR(d.data)} x${d.qtd}`)
+        .join(' · ') || '-';
+    }
+
+    case 'hospedagem': {
+      const entrada = reg.entrada ? formatDateISOtoBR(reg.entrada) : null;
+      const saida = reg.saida ? formatDateISOtoBR(reg.saida) : null;
+      let res = [];
+      if (entrada) res.push(`Entrada: ${entrada}`);
+      if (saida) res.push(`Saída: ${saida}`);
+      return res.join(' · ') || '-';
+    }
+
+    default:
+      return '-';
+  }
+}
+  
 /* ---------- Helpers ---------- */
 function formatDateISOtoBR(iso) {
   if (!iso) return '';
@@ -1104,12 +1157,8 @@ async function carregarListaRegistros(limite = 5) {
         : "Sem data";
 
       // Monta os detalhes do registro conforme campos disponíveis
-      const detalhes = `
-        Qtd: ${reg.quantidade ?? 0}, 
-        Uso: ${reg.uso ?? "-"}, 
-        Motorista: ${reg.motorista ?? "-"}
-      `;
-
+      const detalhes = gerarDescricaoDetalhada(reg).replace(/</g, '&lt;');
+      
       html += `
         <tr>
           <td>${dataExib}</td>
@@ -1247,6 +1296,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
