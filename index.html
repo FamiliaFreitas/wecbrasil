@@ -1114,54 +1114,56 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 let listaCache = [];
 
-  async function carregarListaRegistros() {
-  // espera supabase já inicializado (usa sua variável global `supabase`)
-  const { data: { user } } = await supabase.auth.getUser();
-  const tbody = document.getElementById('listaRegistros');
+async function carregarListaRegistros(limite = 5) {
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    if (!user) {
+      document.getElementById('listaRegistros').innerHTML = `
+        <tr><td colspan="4" class="text-center text-muted">Usuário não autenticado.</td></tr>`;
+      return;
+    }
 
-  if (!user) {
-    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Usuário não autenticado.</td></tr>`;
-    return;
-  }
+    let query = supabase
+      .from('registros')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('data', { ascending: false });
 
-  // mostra o card
-  document.getElementById('listagemRegistrosCard').classList.remove('hidden');
+    if (limite) query = query.limit(limite);
 
-  // busca registros do usuário
-  const { data, error } = await supabase
-    .from('registros')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('data', { ascending: false });
+    const { data, error } = await query;
+    if (error) throw error;
 
-  if (error) {
-    console.error('Erro ao carregar registros:', error);
-    tbody.innerHTML = `<tr><td colspan="4" class="text-danger">Erro ao carregar registros.</td></tr>`;
-    return;
-  }
+    listaCache = data || [];
 
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
-    return;
-  }
+    const tbody = document.getElementById('listaRegistros');
+    if (!listaCache.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
+      return;
+    }
 
-  // montar linhas
-  let html = '';
-  data.forEach(reg => {
-    const dataExib = formatDateISOtoBR(reg.data || reg.entrada || '');
-    const detalhes = gerarDescricaoCurta(reg).replace(/</g, '&lt;');
-    html += `
-      <tr>
-        <td>${dataExib}</td>
-        <td>${reg.tipo || ''}</td>
-        <td>${detalhes}</td>
-        <td>
-          <button class="btn btn-sm btn-info me-1" onclick="verRegistro('${reg.id}')">Ver</button>
-          <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${reg.id}')">Excluir</button>
-        </td>
-      </tr>
-    `;
-  });
+    let html = '';
+    listaCache.forEach(reg => {
+      const dataExib = reg.data
+        ? new Date(reg.data + "T00:00:00").toLocaleDateString("pt-BR", { timeZone: "UTC" })
+        : "Sem data";
+
+      const detalhes = gerarDescricaoDetalhada(reg).replace(/</g, '&lt;');
+      
+      html += `
+        <tr>
+          <td>${dataExib}</td>
+          <td>${reg.tipo || ''}</td>
+          <td>${detalhes}</td>
+          <td>
+            <button class="btn btn-sm btn-warning me-1" onclick="editarRegistro('${String(reg.id)}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${String(reg.id)}')">Excluir</button>
+          </td>
+        </tr>
+      `;
+    });
+  
 
     tbody.innerHTML = html;
 
@@ -1212,6 +1214,35 @@ async function excluirRegistroSupabase(id) {
     carregarListaRegistros();
   }
 }
+
+let registroEditando = null;
+
+async function editarRegistro(id) {
+  // força comparação por string
+  const registro = listaCache.find(r => String(r.id) === String(id));
+  if (!registro) {
+    alert('Registro não encontrado.');
+    return;
+  }
+
+  registroEditando = registro;
+
+  document.getElementById('edit-id').value = registro.id;
+  document.getElementById('edit-tipo').value = registro.tipo || '';
+  document.getElementById('edit-descricao').value = registro.descricao || '';
+
+  if (registro.data) {
+    const dt = new Date(registro.data);
+    const dtLocal = dt.toISOString().slice(0,16);
+    document.getElementById('edit-data').value = dtLocal;
+  } else {
+    document.getElementById('edit-data').value = '';
+  }
+
+  const modalEl = document.getElementById('modalEditarRegistro');
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+  }
 
 async function salvarEdicao() {
   const id = document.getElementById('edit-id').value;
@@ -1286,6 +1317,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
