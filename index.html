@@ -1060,30 +1060,6 @@ function formatDateISOtoBR(iso) {
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
-function gerarDescricaoCurta(reg) {
-  if (!reg) return '';
-  switch (reg.tipo) {
-    case 'lavanderia':
-      return `Lavagens: ${reg.qtdlavagens || 0} · Secagens: ${reg.qtdsecagens || 0}`;
-    case 'carro': {
-      const kmIni = parseInt(reg.kminicial) || 0;
-      const kmFim = parseInt(reg.kmfinal) || 0;
-      const km = (kmFim - kmIni) || 0;
-      const dept = reg.departamento ? ` · Dept: ${reg.departamento}` : '';
-      return `KM: ${kmIni} → ${kmFim} (${km} km) · Uso: ${reg.uso || '-'}${dept} · TAGs: ${reg.qtdtag || 0}`;
-    }
-    case 'xerox':
-      return `Cópias: ${reg.qtd || 0}`;
-    case 'refeicoes':
-      if (!Array.isArray(reg.dias)) return 'Refeições (detalhes não disponíveis)';
-      return reg.dias.map(d => `${formatDateISOtoBR(d.data)} x${d.qtd}`).join(' · ');
-    case 'hospedagem':
-      return `Entrada: ${formatDateISOtoBR(reg.entrada)} · Saída: ${formatDateISOtoBR(reg.saida)}`;
-    default:
-      return JSON.stringify(reg).slice(0, 120) + (JSON.stringify(reg).length > 120 ? '…' : '');
-  }
-}
-
 /* ---------- CRUD na UI ---------- */
 document.addEventListener('DOMContentLoaded', async () => {
   await carregarListaRegistros();
@@ -1135,7 +1111,6 @@ async function carregarListaRegistros(limite = 5) {
         <td>${reg.tipo || ''}</td>
         <td>${detalhes}</td>
         <td>
-          <button class="btn btn-sm btn-info me-1" onclick="verRegistro('${reg.id}')">Ver</button>
           <button class="btn btn-sm btn-warning me-1" onclick="editarRegistro('${reg.id}')">Editar</button>
           <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${reg.id}')">Excluir</button>
         </td>
@@ -1172,28 +1147,9 @@ async function excluirRegistroSupabase(id) {
   }
 }
 
-/* Visualizar registro (mostra janela com detalhes simples) */
-async function verRegistro(id) {
-  const { data, error } = await supabase
-    .from('registros')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error('Erro ao buscar registro:', error);
-    alert('Erro ao buscar registro.');
-    return;
-  }
-
-  const r = data;
-  let texto = `Tipo: ${r.tipo || '-'}\nData: ${formatDateISOtoBR(r.data || r.entrada || '')}\n\nDetalhes:\n${gerarDescricaoCurta(r)}\n\nJSON:\n${JSON.stringify(r, null, 2)}`;
-  // usar alert simples — se preferir eu coloco modal Bootstrap
-  alert(texto);
-}
+let registroEditando = null;
 
 async function editarRegistro(id) {
-  // Buscar dados atuais do registro
   const { data, error } = await supabase
     .from('registros')
     .select('*')
@@ -1206,39 +1162,81 @@ async function editarRegistro(id) {
     return;
   }
 
-  // Simples prompt para teste — depois pode trocar por modal bonito
-  const novoTipo = prompt('Tipo:', data.tipo || '');
-  const novaDescricao = prompt('Descrição:', data.descricao || '');
-  const novaData = prompt('Data (AAAA-MM-DD):', data.data ? data.data.split('T')[0] : '');
+  registroEditando = id;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-tipo').value = data.tipo || '';
+  document.getElementById('edit-descricao').value = data.descricao || '';
+  document.getElementById('edit-data').value = data.data ? data.data.slice(0, 16) : '';
 
-  if (!novoTipo || !novaData) {
+  new bootstrap.Modal(document.getElementById('modalEditarRegistro')).show();
+}
+
+async function salvarEdicao() {
+  const id = document.getElementById('edit-id').value;
+  const tipo = document.getElementById('edit-tipo').value;
+  const descricao = document.getElementById('edit-descricao').value;
+  const data = document.getElementById('edit-data').value;
+
+  if (!tipo || !data) {
     alert('Tipo e Data são obrigatórios!');
     return;
   }
 
-  // Chamar sua Edge Function para atualizar
   const resp = await fetch('https://SEU_PROJETO.supabase.co/functions/v1/editar-servico', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      id,
-      tipo: novoTipo,
-      descricao: novaDescricao,
-      data: novaData
-    })
+    body: JSON.stringify({ id, tipo, descricao, data })
   });
 
   const result = await resp.json();
   if (resp.ok) {
+    bootstrap.Modal.getInstance(document.getElementById('modalEditarRegistro')).hide();
     alert('Registro atualizado com sucesso!');
-    carregarListaRegistros(); // recarrega lista
+    carregarListaRegistros();
   } else {
     alert('Erro ao atualizar: ' + (result.error || 'desconhecido'));
   }
 }
 </script>
+
+      <!-- Modal Edição Registro -->
+<div class="modal fade" id="modalEditarRegistro" tabindex="-1" aria-labelledby="modalEditarRegistroLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalEditarRegistroLabel">Editar Registro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarRegistro">
+          <input type="hidden" id="edit-id">
+
+          <div class="mb-3">
+            <label for="edit-tipo" class="form-label">Tipo</label>
+            <input type="text" class="form-control" id="edit-tipo" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="edit-descricao" class="form-label">Descrição</label>
+            <textarea class="form-control" id="edit-descricao"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="edit-data" class="form-label">Data</label>
+            <input type="datetime-local" class="form-control" id="edit-data" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="salvarEdicao()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
+
 
 
 
