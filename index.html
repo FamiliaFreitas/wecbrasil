@@ -1021,6 +1021,20 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
   }
 }
 
+<table class="table table-bordered" id="tabelaServicos">
+  <thead>
+    <tr>
+      <th>Data</th>
+      <th>Tipo</th>
+      <th>Descrição</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody id="listaServicos">
+    <!-- Linhas serão adicionadas pelo JS -->
+  </tbody>
+</table>
+  
 async function carregarServicos() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
@@ -1054,58 +1068,55 @@ async function carregarServicos() {
   });
 }
 
-async function excluirServico(id) {
-  if (!confirm('Tem certeza que deseja excluir este serviço?')) return;
+async function excluirRegistro(id) {
+  if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
 
-  const { error } = await supabase
-    .from('servicos')
-    .delete()
-    .eq('id', id);
+  const { error } = await fetch('/api/excluir-servico', {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  }).then(res => res.json());
 
   if (error) {
-    alert('Erro ao excluir serviço');
-    console.error(error);
+    alert("Erro ao excluir: " + error);
   } else {
-    alert('Serviço excluído com sucesso!');
+    alert("Serviço excluído com sucesso!");
     carregarServicos();
   }
 }
 
-async function editarServico(id) {
-  const { data, error } = await supabase
-    .from('servicos')
-    .select('*')
-    .eq('id', id)
-    .single();
+async function editarRegistro(id) {
+  const novoTipo = prompt("Novo tipo de serviço:");
+  const novaDescricao = prompt("Nova descrição:");
+  const novaData = prompt("Nova data (YYYY-MM-DD):");
 
-  if (error) {
-    alert('Erro ao carregar serviço para edição');
-    console.error(error);
+  if (!novoTipo || !novaDescricao || !novaData) {
+    alert("Todos os campos são obrigatórios.");
     return;
   }
 
-  const novaDescricao = prompt('Nova descrição:', data.descricao);
-  if (!novaDescricao) return;
+  const { error } = await fetch('/api/editar-servico', {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id,
+      tipo: novoTipo,
+      descricao: novaDescricao,
+      data: novaData
+    })
+  }).then(res => res.json());
 
-  const { error: updateError } = await supabase
-    .from('servicos')
-    .update({ descricao: novaDescricao })
-    .eq('id', id);
-
-  if (updateError) {
-    alert('Erro ao editar serviço');
-    console.error(updateError);
+  if (error) {
+    alert("Erro ao editar: " + error);
   } else {
-    alert('Serviço atualizado com sucesso!');
+    alert("Serviço atualizado com sucesso!");
     carregarServicos();
   }
 }
-
-// Carrega registros ao abrir a página
-carregarServicos();
 </script>
 </body>
 </html>
+
 
 
 
