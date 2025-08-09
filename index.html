@@ -108,27 +108,6 @@
         </form>
       </div>
     </div>
-
-   <div class="card mb-4 hidden" id="servicosCard">
-  <div class="card-header">
-    Meus Serviços Registrados
-  </div>
-  <div class="card-body">
-    <table class="table table-bordered" id="tabelaServicos">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Tipo</th>
-          <th>Descrição</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="listaServicos">
-        <!-- Linhas serão adicionadas pelo JS -->
-      </tbody>
-    </table>
-  </div>
-</div>
       
     <!-- Área para relatórios (somente admin) -->
     <div class="card hidden" id="relatorioCard">
@@ -1016,7 +995,7 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
     const token = session.access_token;
 
     const response = await fetch('https://xqwubmknwvvonjzaecmk.functions.supabase.co/alterar-permissao-usuario', {
-      method: 'POST',
+    method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -1042,101 +1021,158 @@ if (campoDepartamento) campoDepartamento.innerHTML = '';
   }
 }
 
-<table class="table table-bordered" id="tabelaServicos">
-  <thead>
-    <tr>
-      <th>Data</th>
-      <th>Tipo</th>
-      <th>Descrição</th>
-      <th>Ações</th>
-    </tr>
-  </thead>
-  <tbody id="listaServicos">
-    <!-- Linhas serão adicionadas pelo JS -->
-  </tbody>
-</table>
-  
-async function carregarServicos() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+<!-- Listagem de Registros (cole abaixo do registroCard) -->
+<div class="card mb-4 hidden" id="listagemRegistrosCard">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Listagem de Registros</span>
+    <small class="text-muted">Meus registros recentes</small>
+  </div>
+  <div class="card-body">
+    <table class="table table-sm table-bordered" id="tabelaRegistros">
+      <thead>
+        <tr>
+          <th style="width:120px">Data</th>
+          <th>Tipo</th>
+          <th>Detalhes</th>
+          <th style="width:140px">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="listaRegistros">
+        <tr>
+          <td colspan="4" class="text-center text-muted">Carregando...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
+<script>
+/* ---------- Helpers ---------- */
+function formatDateISOtoBR(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function gerarDescricaoCurta(reg) {
+  if (!reg) return '';
+  switch (reg.tipo) {
+    case 'lavanderia':
+      return `Lavagens: ${reg.qtdlavagens || 0} · Secagens: ${reg.qtdsecagens || 0}`;
+    case 'carro': {
+      const kmIni = parseInt(reg.kminicial) || 0;
+      const kmFim = parseInt(reg.kmfinal) || 0;
+      const km = (kmFim - kmIni) || 0;
+      const dept = reg.departamento ? ` · Dept: ${reg.departamento}` : '';
+      return `KM: ${kmIni} → ${kmFim} (${km} km) · Uso: ${reg.uso || '-'}${dept} · TAGs: ${reg.qtdtag || 0}`;
+    }
+    case 'xerox':
+      return `Cópias: ${reg.qtd || 0}`;
+    case 'refeicoes':
+      if (!Array.isArray(reg.dias)) return 'Refeições (detalhes não disponíveis)';
+      return reg.dias.map(d => `${formatDateISOtoBR(d.data)} x${d.qtd}`).join(' · ');
+    case 'hospedagem':
+      return `Entrada: ${formatDateISOtoBR(reg.entrada)} · Saída: ${formatDateISOtoBR(reg.saida)}`;
+    default:
+      return JSON.stringify(reg).slice(0, 120) + (JSON.stringify(reg).length > 120 ? '…' : '');
+  }
+}
+
+/* ---------- CRUD na UI ---------- */
+async function carregarListaRegistros() {
+  // espera supabase já inicializado (usa sua variável global `supabase`)
+  const { data: { user } } = await supabase.auth.getUser();
+  const tbody = document.getElementById('listaRegistros');
+
+  if (!user) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Usuário não autenticado.</td></tr>`;
+    return;
+  }
+
+  // mostra o card
+  document.getElementById('listagemRegistrosCard').classList.remove('hidden');
+
+  // busca registros do usuário
   const { data, error } = await supabase
-    .from('servicos')
+    .from('registros')
     .select('*')
-    .eq('usuario_id', user.id)
+    .eq('user_id', user.id)
     .order('data', { ascending: false });
 
   if (error) {
-    console.error('Erro ao carregar serviços:', error);
+    console.error('Erro ao carregar registros:', error);
+    tbody.innerHTML = `<tr><td colspan="4" class="text-danger">Erro ao carregar registros.</td></tr>`;
     return;
   }
 
-  const lista = document.getElementById('listaServicos');
-  lista.innerHTML = '';
+  if (!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
+    return;
+  }
 
-  data.forEach(servico => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${servico.data}</td>
-      <td>${servico.tipo}</td>
-      <td>${servico.descricao}</td>
-      <td>
-        <button class="btn btn-warning btn-sm" onclick="editarRegistro('${servico.id}')">Editar</button>
-        <button class="btn btn-danger btn-sm" onclick="excluirRegistro('${servico.id}')">Excluir</button>
-      </td>
+  // montar linhas
+  let html = '';
+  data.forEach(reg => {
+    const dataExib = formatDateISOtoBR(reg.data || reg.entrada || '');
+    const detalhes = gerarDescricaoCurta(reg).replace(/</g, '&lt;');
+    html += `
+      <tr>
+        <td>${dataExib}</td>
+        <td>${reg.tipo || ''}</td>
+        <td>${detalhes}</td>
+        <td>
+          <button class="btn btn-sm btn-info me-1" onclick="verRegistro('${reg.id}')">Ver</button>
+          <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${reg.id}')">Excluir</button>
+        </td>
+      </tr>
     `;
-    lista.appendChild(tr);
   });
+
+  tbody.innerHTML = html;
 }
 
-async function excluirRegistro(id) {
-  if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
+/* Excluir registro pela tabela 'registros' no Supabase */
+async function excluirRegistroSupabase(id) {
+  if (!confirm('Tem certeza que deseja excluir este registro?')) return;
 
-  const { error } = await fetch('/api/excluir-servico', {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id })
-  }).then(res => res.json());
+  const { error } = await supabase
+    .from('registros')
+    .delete()
+    .eq('id', id);
 
   if (error) {
-    alert("Erro ao excluir: " + error);
+    console.error('Erro ao excluir registro:', error);
+    alert('Erro ao excluir registro: ' + (error.message || error));
   } else {
-    alert("Serviço excluído com sucesso!");
-    carregarServicos();
+    alert('Registro excluído com sucesso.');
+    carregarListaRegistros();
   }
 }
 
-async function editarRegistro(id) {
-  const novoTipo = prompt("Novo tipo de serviço:");
-  const novaDescricao = prompt("Nova descrição:");
-  const novaData = prompt("Nova data (YYYY-MM-DD):");
+/* Visualizar registro (mostra janela com detalhes simples) */
+async function verRegistro(id) {
+  const { data, error } = await supabase
+    .from('registros')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  if (!novoTipo || !novaDescricao || !novaData) {
-    alert("Todos os campos são obrigatórios.");
+  if (error) {
+    console.error('Erro ao buscar registro:', error);
+    alert('Erro ao buscar registro.');
     return;
   }
 
-  const { error } = await fetch('/api/editar-servico', {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id,
-      tipo: novoTipo,
-      descricao: novaDescricao,
-      data: novaData
-    })
-  }).then(res => res.json());
-
-  if (error) {
-    alert("Erro ao editar: " + error);
-  } else {
-    alert("Serviço atualizado com sucesso!");
-    carregarServicos();
-  }
+  const r = data;
+  let texto = `Tipo: ${r.tipo || '-'}\nData: ${formatDateISOtoBR(r.data || r.entrada || '')}\n\nDetalhes:\n${gerarDescricaoCurta(r)}\n\nJSON:\n${JSON.stringify(r, null, 2)}`;
+  // usar alert simples — se preferir eu coloco modal Bootstrap
+  alert(texto);
 }
 </script>
 </body>
 </html>
+
 
 
 
