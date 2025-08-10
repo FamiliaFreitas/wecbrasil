@@ -1112,64 +1112,100 @@ document.addEventListener('DOMContentLoaded', async () => {
   await carregarListaRegistros();
 });
 
-let listaCache = [];
-
 async function carregarListaRegistros(verTodos = false) {
-    const user = supabase.auth.user();
-    if (!user) {
-        console.warn('Usuário não autenticado.');
-        return;
+// carregarListaRegistros corrigida para Supabase v2
+async function carregarListaRegistros(limite = 5, verTodos = false) {
+  try {
+    // pega usuário pela API v2
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    const user = userData?.user || null;
+
+    // se não tem usuário e não estamos pedindo "ver todos", mostra mensagem
+    if (!user && !verTodos) {
+      document.getElementById('listaRegistros').innerHTML =
+        `<tr><td colspan="4" class="text-center text-muted">Usuário não autenticado.</td></tr>`;
+      // esconder botão ver todos (se existir)
+      document.getElementById('btnVerTodos')?.classList.add('hidden');
+      return;
     }
 
+    // monta query
     let query = supabase
-        .from('registros')
-        .select('*')
-        .order('id', { ascending: false });
+      .from('registros')
+      .select('*')
+      .order('data', { ascending: false });
 
-    // Filtra por usuário se não for "ver todos"
-    if (!verTodos) {
-        query = query.eq('user_id', user.id);
+    if (!verTodos && user) query = query.eq('user_id', user.id);
+
+    // aplica limite só se for um número positivo
+    if (limite != null && Number(limite) > 0) query = query.limit(Number(limite));
+
+    const { data, error } = await query;
+    console.debug('[carregarListaRegistros] retorno', { data, error });
+    if (error) throw error;
+
+    listaCache = data || [];
+
+    const tbody = document.getElementById('listaRegistros');
+    if (!listaCache.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
+      // só mostra "Ver todos" quando estivermos usando limite
+      document.getElementById('btnVerTodos')?.classList.toggle('hidden', !(limite != null && Number(limite) > 0));
+      return;
     }
 
-    try {
-        const { data, error } = await query;
-        if (error) {
-            console.error('Erro ao carregar registros:', error);
-            return;
-        }
+    // monta as linhas
+    const rows = listaCache.map(reg => {
+      const dataExib = reg.data
+        ? new Date(String(reg.data) + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+        : 'Sem data';
+      const detalhes = gerarDescricaoDetalhada(reg).replace(/</g, '&lt;');
+      return `
+        <tr>
+          <td>${dataExib}</td>
+          <td>${reg.tipo || ''}</td>
+          <td>${detalhes}</td>
+          <td>
+            <button class="btn btn-sm btn-warning me-1" onclick="editarRegistro('${String(reg.id)}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${String(reg.id)}')">Excluir</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
-        // Atualiza o cache
-        listaCache = data;
+    tbody.innerHTML = rows;
 
-        const tbody = document.getElementById('listaRegistros');
-        tbody.innerHTML = '';
+    // controla visibilidade do botão "Ver todos"
+    document.getElementById('btnVerTodos')?.classList.toggle('hidden', !(limite != null && Number(limite) > 0));
 
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6">Nenhum registro encontrado.</td></tr>';
-            return;
-        }
-
-        // Preenche tabela
-        data.forEach(reg => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${reg.id}</td>
-                <td>${reg.servico || ''}</td>
-                <td>${reg.data || ''}</td>
-                <td>${reg.status || ''}</td>
-                <td>${reg.usuario || ''}</td>
-                <td>${gerarDescricaoDetalhada(reg) || ''}</td>
-                <td>
-                    <button onclick="editarRegistro(${reg.id})">Editar</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-    } catch (err) {
-        console.error('Erro inesperado ao carregar registros:', err);
-    }
+  } catch (err) {
+    console.error('Erro ao carregar registros:', err);
+    document.getElementById('listaRegistros').innerHTML =
+      `<tr><td colspan="4" class="text-center text-danger">Erro ao carregar registros: ${err.message || err}</td></tr>`;
+  }
 }
+
+// chama ao carregar a página (se já tiver sessão)
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: userData } = await supabase.auth.getUser();
+  if (userData?.user) {
+    carregarListaRegistros(); // carrega limitados por padrão
+  } else {
+    document.getElementById('listaRegistros').innerHTML =
+      `<tr><td colspan="4" class="text-center text-muted">Faça login para ver seus registros.</td></tr>`;
+  }
+});
+
+// garante carregamento ao logar/alterar sessão
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    carregarListaRegistros();
+  } else if (event === 'SIGNED_OUT') {
+    document.getElementById('listaRegistros').innerHTML =
+      `<tr><td colspan="4" class="text-center text-muted">Faça login para ver seus registros.</td></tr>`;
+  }
+});
 
 // Configura o botão "Ver todos"
 document.getElementById('verTodosBtn').addEventListener('click', () => {
@@ -1336,6 +1372,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
