@@ -1083,7 +1083,7 @@ function baixarRelatorioPDF() {
 
   function timbre(doc, dataInicial, dataFinal) {
     // Logo: x=12, y=10, largura=30, altura=18 (ajuste se quiser)
-    if (logoBase64) doc.addImage(logoBase64, 'PNG', 12, 10, 30, 18);
+    if (logoBase64) doc.addImage(logoBase64, 'PNG', 12, 10, 30, 30);
     doc.setFontSize(16);
     doc.setFont(undefined, "bold");
     doc.text('RELATÓRIO DE USO DE SERVIÇOS', largura/2, 20, { align: 'center' });
@@ -1094,27 +1094,39 @@ function baixarRelatorioPDF() {
     doc.text(`Período: ${dataInicial} a ${dataFinal}`, largura/2, 36, { align: 'center' });
   }
 
-  // Para cada usuário, uma página (sempre começa página nova)
-  blocos.forEach((bloco, i) => {
-    if (i !== 0) doc.addPage();
-    timbre(doc, dataInicial, dataFinal);
+  // Para cada usuário, mantenha juntos na mesma página (se couber)
+blocos.forEach((bloco, i) => {
+  const usuarioTexto = "Usuário:" + bloco.replace(/^\n/, "");
+  const linhas = doc.splitTextToSize(usuarioTexto, 180);
+  const alturaLinha = 7;
+  const alturaMax = 280;
+  let y = doc.internal.getCurrentPageInfo().pageNumber === 1 && i === 0 ? 44 : doc.lastY || 44;
+  const alturaNecessaria = linhas.length * alturaLinha;
 
-    const usuarioTexto = "Usuário:" + bloco.replace(/^\n/, "");
-    const linhas = doc.splitTextToSize(usuarioTexto, 180);
-    let y = 44;
-    const alturaLinha = 7;
-    const alturaMax = 280;
-    for (let j=0; j<linhas.length; j++) {
-      if (y > alturaMax) {
-        doc.addPage();
-        timbre(doc, dataInicial, dataFinal);
-        y = 44;
-      }
-      doc.setFontSize(11);
-      doc.text(linhas[j], 14, y);
-      y += alturaLinha;
+  // Se não couber todo o usuário, pule para a próxima página e timbre
+  if (y + alturaNecessaria > alturaMax) {
+    doc.addPage();
+    timbre(doc, dataInicial, dataFinal);
+    y = 44;
+  } else if (i === 0 && doc.internal.getCurrentPageInfo().pageNumber === 1) {
+    // Só coloca o timbre na primeira página do relatório
+    timbre(doc, dataInicial, dataFinal);
+    y = 44;
+  }
+
+  for (let j = 0; j < linhas.length; j++) {
+    if (y > alturaMax) {
+      doc.addPage();
+      timbre(doc, dataInicial, dataFinal);
+      y = 44;
     }
-  });
+    doc.setFontSize(11);
+    doc.text(linhas[j], 14, y);
+    y += alturaLinha;
+  }
+  // Salva a posição Y para o próximo usuário
+  doc.lastY = y;
+});
 
   doc.save('relatorio.pdf');
 }
@@ -1436,6 +1448,7 @@ document.getElementById('formMissionario').addEventListener('submit', async func
 </div>
 </body>
 </html>
+
 
 
 
