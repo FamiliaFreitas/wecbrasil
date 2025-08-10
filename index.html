@@ -1114,55 +1114,74 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 let listaCache = [];
 
-async function carregarListaRegistros(limite = 5) {
-  try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError) throw authError;
+async function carregarListaRegistros(verTodos = false) {
+    const user = supabase.auth.user();
     if (!user) {
-      document.getElementById('listaRegistros').innerHTML = `
-        <tr><td colspan="4" class="text-center text-muted">Usuário não autenticado.</td></tr>`;
-      return;
+        console.warn('Usuário não autenticado.');
+        return;
     }
 
     let query = supabase
-      .from('registros')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('data', { ascending: false });
+        .from('registros')
+        .select('*')
+        .order('id', { ascending: false });
 
-    if (limite) query = query.limit(limite);
-
-    const { data, error } = await query;
-    if (error) throw error;
-
-    listaCache = data || [];
-
-    const tbody = document.getElementById('listaRegistros');
-    if (!listaCache.length) {
-      tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
-      return;
+    // Filtra por usuário se não for "ver todos"
+    if (!verTodos) {
+        query = query.eq('user_id', user.id);
     }
 
-    let html = '';
-    listaCache.forEach(reg => {
-      const dataExib = reg.data
-        ? new Date(reg.data + "T00:00:00").toLocaleDateString("pt-BR", { timeZone: "UTC" })
-        : "Sem data";
+    try {
+        const { data, error } = await query;
+        if (error) {
+            console.error('Erro ao carregar registros:', error);
+            return;
+        }
 
-      const detalhes = gerarDescricaoDetalhada(reg).replace(/</g, '&lt;');
-      
-      html += `
-        <tr>
-          <td>${dataExib}</td>
-          <td>${reg.tipo || ''}</td>
-          <td>${detalhes}</td>
-          <td>
-            <button class="btn btn-sm btn-warning me-1" onclick="editarRegistro('${String(reg.id)}')">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="excluirRegistroSupabase('${String(reg.id)}')">Excluir</button>
-          </td>
-        </tr>
-      `;
-    });
+        // Atualiza o cache
+        listaCache = data;
+
+        const tbody = document.getElementById('listaRegistros');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6">Nenhum registro encontrado.</td></tr>';
+            return;
+        }
+
+        // Preenche tabela
+        data.forEach(reg => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${reg.id}</td>
+                <td>${reg.servico || ''}</td>
+                <td>${reg.data || ''}</td>
+                <td>${reg.status || ''}</td>
+                <td>${reg.usuario || ''}</td>
+                <td>${gerarDescricaoDetalhada(reg) || ''}</td>
+                <td>
+                    <button onclick="editarRegistro(${reg.id})">Editar</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        console.error('Erro inesperado ao carregar registros:', err);
+    }
+}
+
+// Configura o botão "Ver todos"
+document.getElementById('verTodosBtn').addEventListener('click', () => {
+    carregarListaRegistros(true);
+});
+
+// Carrega registros após login
+supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN') {
+        carregarListaRegistros();
+    }
+});
   
 
     tbody.innerHTML = html;
@@ -1317,6 +1336,7 @@ async function salvarEdicao() {
 </div>
 </body>
 </html>
+
 
 
 
