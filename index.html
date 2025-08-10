@@ -140,40 +140,26 @@
     </div>
 
     <!-- Modal Edição Registro -->
-    <div class="modal fade" id="modalEditarRegistro" tabindex="-1" aria-labelledby="modalEditarRegistroLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalEditarRegistroLabel">Editar Registro</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <form id="formEditarRegistro">
-              <input type="hidden" id="edit-id">
-
-              <div class="mb-3">
-                <label for="edit-tipo" class="form-label">Tipo</label>
-                <input type="text" class="form-control" id="edit-tipo" required>
-              </div>
-
-              <div class="mb-3">
-                <label for="edit-descricao" class="form-label">Descrição</label>
-                <textarea class="form-control" id="edit-descricao"></textarea>
-              </div>
-
-              <div class="mb-3">
-                <label for="edit-data" class="form-label">Data</label>
-                <input type="datetime-local" class="form-control" id="edit-data" required>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-primary" onclick="salvarEdicao()">Salvar</button>
-          </div>
-        </div>
+<div class="modal fade" id="modalEditarRegistro" tabindex="-1" aria-labelledby="modalEditarRegistroLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalEditarRegistroLabel">Editar Registro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditarRegistro">
+          <input type="hidden" id="edit-id">
+          <div id="camposEdicaoServico"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="salvarEdicao()">Salvar</button>
       </div>
     </div>
+  </div>
+</div>
 
     <!-- Relatório Geral (apenas para admin ou quem tem liberação) -->
 <div class="card hidden" id="relatorioCard">
@@ -736,66 +722,210 @@
       }
 
       async function editarRegistro(id) {
-        const registro = listaCache.find(r => String(r.id) === String(id));
-        if (!registro) {
-          alert('Registro não encontrado.');
-          return;
-        }
+  const registro = listaCache.find(r => String(r.id) === String(id));
+  if (!registro) {
+    alert('Registro não encontrado.');
+    return;
+  }
+  registroEditando = registro;
+  document.getElementById('edit-id').value = registro.id;
 
-        registroEditando = registro;
+  // Monta os campos conforme o tipo
+  const container = document.getElementById('camposEdicaoServico');
+  const tipo = registro.tipo;
 
-        document.getElementById('edit-id').value = registro.id;
-        document.getElementById('edit-tipo').value = registro.tipo || '';
-        document.getElementById('edit-descricao').value = registro.descricao || '';
+  let html = `<label class="form-label">Tipo</label>
+    <input type="text" class="form-control mb-2" id="edit-tipo" value="${tipo}" disabled>`;
 
-        if (registro.data) {
-          const dt = new Date(registro.data);
-          const dtLocal = dt.toISOString().slice(0,16);
-          document.getElementById('edit-data').value = dtLocal;
-        } else {
-          document.getElementById('edit-data').value = '';
-        }
+  switch(tipo) {
+    case 'lavanderia':
+      html += `
+        <label>Data:</label>
+        <input type="date" class="form-control mb-2" id="edit-data" value="${registro.data || ''}" required>
+        <label>Quantidade de lavagens:</label>
+        <input type="number" class="form-control mb-2" id="edit-qtdLavagens" value="${registro.qtdlavagens || 0}" min="0">
+        <label>Quantidade de secagens:</label>
+        <input type="number" class="form-control mb-2" id="edit-qtdSecagens" value="${registro.qtdsecagens || 0}" min="0">
+      `;
+      break;
+    case 'carro':
+      html += `
+        <label>Data:</label>
+        <input type="date" class="form-control mb-2" id="edit-data" value="${registro.data || ''}" required>
+        <label>KM Inicial:</label>
+        <input type="number" class="form-control mb-2" id="edit-kmInicial" value="${registro.kminicial || 0}" min="0">
+        <label>KM Final:</label>
+        <input type="number" class="form-control mb-2" id="edit-kmFinal" value="${registro.kmfinal || 0}" min="0">
+        <label>Uso:</label>
+        <select class="form-select mb-2" id="edit-usoCarro">
+          <option value="pessoal" ${registro.uso === 'pessoal' ? 'selected' : ''}>Pessoal</option>
+          <option value="departamento" ${registro.uso === 'departamento' ? 'selected' : ''}>Departamento</option>
+        </select>
+        <div id="edit-campoDepartamento" class="mb-2">
+          ${registro.uso === 'departamento' ? `
+            <label>Departamento:</label>
+            <input type="text" class="form-control mb-2" id="edit-departamento" value="${registro.departamento || ''}">
+          ` : ''}
+        </div>
+        <label>Quantidade de uso da TAG:</label>
+        <input type="number" class="form-control mb-2" id="edit-qtdTag" value="${registro.qtdtag || 0}" min="0">
+      `;
+      break;
+    case 'xerox':
+      html += `
+        <label>Data:</label>
+        <input type="date" class="form-control mb-2" id="edit-data" value="${registro.data || ''}" required>
+        <label>Quantidade de cópias:</label>
+        <input type="number" class="form-control mb-2" id="edit-qtdXerox" value="${registro.qtd || 0}" min="1">
+      `;
+      break;
+    case 'refeicoes':
+      html += `<div id="edit-refeicoesDias"></div>
+      <button type="button" class="btn btn-outline-primary btn-sm mb-2" onclick="adicionarDiaRefeicaoEdicao()">Adicionar Dia</button>`;
+      break;
+    case 'hospedagem':
+      html += `
+        <label>Data de entrada:</label>
+        <input type="date" class="form-control mb-2" id="edit-entrada" value="${registro.entrada || ''}">
+        <label>Data de saída:</label>
+        <input type="date" class="form-control mb-2" id="edit-saida" value="${registro.saida || ''}">
+        <div id="edit-erroData" class="text-danger"></div>
+      `;
+      break;
+    default:
+      html += `<div class="alert alert-warning">Tipo de serviço desconhecido para edição.</div>`;
+  }
+  container.innerHTML = html;
 
-        const modalEl = document.getElementById('modalEditarRegistro');
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
+  // Especial para refeições: renderize os dias existentes
+  if (tipo === 'refeicoes' && Array.isArray(registro.dias)) {
+    const refeicoesContainer = document.getElementById('edit-refeicoesDias');
+    registro.dias.forEach(dia => {
+      const linha = document.createElement('div');
+      linha.classList.add('mb-2', 'edit-linha-dia');
+      linha.innerHTML = `
+        <div class="d-flex align-items-center">
+          <input type="date" class="form-control me-2 edit-data-refeicao" value="${dia.data}" required>
+          <input type="number" class="form-control edit-qtd-refeicao" placeholder="Quantidade" min="1" value="${dia.qtd}" required>
+          <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.parentElement.parentElement.remove()">X</button>
+        </div>
+      `;
+      refeicoesContainer.appendChild(linha);
+    });
+  }
+
+  // Departamento dinâmico: atualize ao mudar o uso
+  if (tipo === 'carro') {
+    document.getElementById('edit-usoCarro').addEventListener('change', function() {
+      const campo = document.getElementById('edit-campoDepartamento');
+      if (this.value === 'departamento') {
+        campo.innerHTML = `
+          <label>Departamento:</label>
+          <input type="text" class="form-control mb-2" id="edit-departamento" value="${registro.departamento || ''}">
+        `;
+      } else {
+        campo.innerHTML = '';
       }
+    });
+  }
+
+  // Mostra o modal
+  const modalEl = document.getElementById('modalEditarRegistro');
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+}
+
+// Adicionar novo dia de refeições no modo edição
+function adicionarDiaRefeicaoEdicao() {
+  const diasContainer = document.getElementById('edit-refeicoesDias');
+  const novoDia = document.createElement('div');
+  novoDia.classList.add('mb-2', 'edit-linha-dia');
+  novoDia.innerHTML = `
+    <div class="d-flex align-items-center">
+      <input type="date" class="form-control me-2 edit-data-refeicao" required>
+      <input type="number" class="form-control edit-qtd-refeicao" placeholder="Quantidade" min="1" required>
+      <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.parentElement.parentElement.remove()">X</button>
+    </div>
+  `;
+  diasContainer.appendChild(novoDia);
+}
 
       async function salvarEdicao() {
-        const id = document.getElementById('edit-id').value;
-        const tipo = document.getElementById('edit-tipo').value.trim();
-        const descricao = document.getElementById('edit-descricao').value.trim();
-        const data = document.getElementById('edit-data').value;
+  const id = document.getElementById('edit-id').value;
+  const tipo = registroEditando.tipo; // O tipo não muda!
+  let payload = {};
+  let valid = true;
 
-        if (!tipo || !data) {
-          alert('Tipo e Data são obrigatórios!');
-          return;
-        }
-
-        try {
-          const { error } = await supabase
-            .from('registros')
-            .update({ tipo, descricao, data: data.slice(0,10) })
-            .eq('id', id);
-
-          if (error) throw new Error(error.message);
-
-          const modalEl = document.getElementById('modalEditarRegistro');
-          const modalInstance = bootstrap.Modal.getInstance(modalEl);
-          if (modalInstance) modalInstance.hide();
-
-          alert('Registro atualizado com sucesso!');
-          await carregarListaRegistros();
-
-        } catch (err) {
-          alert('Erro ao atualizar: ' + err.message);
-        }
+  switch(tipo) {
+    case 'lavanderia':
+      payload = {
+        data: document.getElementById('edit-data').value,
+        qtdlavagens: Number(document.getElementById('edit-qtdLavagens').value),
+        qtdsecagens: Number(document.getElementById('edit-qtdSecagens').value)
+      };
+      if (!payload.data) valid = false;
+      break;
+    case 'carro':
+      payload = {
+        data: document.getElementById('edit-data').value,
+        kminicial: Number(document.getElementById('edit-kmInicial').value),
+        kmfinal: Number(document.getElementById('edit-kmFinal').value),
+        uso: document.getElementById('edit-usoCarro').value,
+        qtdtag: Number(document.getElementById('edit-qtdTag').value)
+      };
+      if (payload.uso === 'departamento') {
+        payload.departamento = document.getElementById('edit-departamento').value;
       }
-
-      document.addEventListener('DOMContentLoaded', () => {
-        verificarLogin();
-        carregarListaRegistros();
+      if (!payload.data) valid = false;
+      break;
+    case 'xerox':
+      payload = {
+        data: document.getElementById('edit-data').value,
+        qtd: Number(document.getElementById('edit-qtdXerox').value)
+      };
+      if (!payload.data) valid = false;
+      break;
+    case 'refeicoes':
+      const dias = [];
+      document.querySelectorAll('.edit-linha-dia').forEach(el => {
+        const data = el.querySelector('.edit-data-refeicao').value;
+        const qtd = el.querySelector('.edit-qtd-refeicao').value;
+        if (data && qtd) dias.push({ data, qtd: Number(qtd) });
       });
+      payload = { dias };
+      if (dias.length === 0) valid = false;
+      break;
+    case 'hospedagem':
+      payload = {
+        entrada: document.getElementById('edit-entrada').value,
+        saida: document.getElementById('edit-saida').value
+      };
+      if (!payload.entrada || !payload.saida) valid = false;
+      break;
+    default:
+      valid = false;
+  }
+
+  if (!valid) {
+    alert('Preencha todos os campos obrigatórios.');
+    return;
+  }
+
+  // Atualize via Supabase
+  const { error } = await supabase
+    .from('registros')
+    .update(payload)
+    .eq('id', id);
+
+  if (error) {
+    alert('Erro ao atualizar: ' + error.message);
+    return;
+  }
+
+  bootstrap.Modal.getInstance(document.getElementById('modalEditarRegistro')).hide();
+  alert('Registro atualizado com sucesso!');
+  carregarListaRegistros();
+};
 
       supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -1122,4 +1252,5 @@ document.getElementById('formMissionario').addEventListener('submit', async func
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
