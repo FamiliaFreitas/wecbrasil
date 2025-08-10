@@ -1099,33 +1099,72 @@ function baixarRelatorioPDF() {
   const blocos = texto.split(/Usuário:/).filter(Boolean);
   let y = 60; // <-- Aumente esse valor para descer ainda mais! (antes estava 44)
 
-  blocos.forEach((bloco, i) => {
-    const usuarioTexto = "Usuário:" + bloco.replace(/^\n/, "");
-    const linhas = doc.splitTextToSize(usuarioTexto, 180);
-    const alturaLinha = 7;
-    const alturaMax = 280;
-    const alturaNecessaria = linhas.length * alturaLinha;
+  // Grade: 2 colunas x 3 linhas por página
+const margemEsq = 12;
+const margemTopo = 54; // espaço para o timbre
+const espacamentoH = 6; // espaço horizontal entre colunas
+const espacamentoV = 6; // espaço vertical entre linhas
+const cols = 2;
+const rows = 3;
+const cellWidth = (largura - margemEsq * 2 - espacamentoH) / cols;
+const cellHeight = (altura - margemTopo - 16 - espacamentoV * (rows - 1)) / rows;
 
-    // Verifica se cabe todo o usuário, senão pula pra próxima página:
-    if (i === 0) {
-      timbre(doc, dataInicial, dataFinal);
-    } else if (y + alturaNecessaria > alturaMax) {
-      doc.addPage();
-      timbre(doc, dataInicial, dataFinal);
-      y = 54; // mesmo valor do início
-    }
+let col = 0, row = 0, blocoCount = 0;
+timbre();
 
-    for (let j = 0; j < linhas.length; j++) {
-      if (y > alturaMax) {
-        doc.addPage();
-        timbre(doc, dataInicial, dataFinal);
-        y = 54;
-      }
-      doc.setFontSize(11);
-      doc.text(linhas[j], 14, y);
-      y += alturaLinha;
+blocos.forEach((bloco, i) => {
+  if (blocoCount === 6) { // nova página
+    doc.addPage();
+    timbre();
+    col = 0;
+    row = 0;
+    blocoCount = 0;
+  }
+
+  // Posição do bloco na página
+  const x = margemEsq + col * (cellWidth + espacamentoH);
+  const y = margemTopo + row * (cellHeight + espacamentoV);
+
+  // Quebra o texto para caber na célula
+  const usuarioTexto = "Usuário:" + bloco.replace(/^\n/, "");
+  doc.setFontSize(11);
+  const linhas = doc.splitTextToSize(usuarioTexto, cellWidth - 4); // 2mm de margem interna
+
+  // Altura necessária para o bloco
+  const alturaLinha = 6;
+  const alturaNecessaria = linhas.length * alturaLinha + 4; // 4mm margem sup/inf
+
+  // Se não couber na célula, reduz fonte (ou, se quiser, pode cortar ou avisar)
+  if (alturaNecessaria > cellHeight) {
+    doc.setFontSize(9);
+  }
+
+  // Desenha borda da célula (opcional)
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.2);
+  doc.rect(x, y, cellWidth, cellHeight);
+
+  // Escreve linhas dentro da célula
+  let yTexto = y + 8;
+  doc.setFontSize(11);
+  linhas.forEach(linha => {
+    if (yTexto + alturaLinha < y + cellHeight - 2) {
+      doc.text(linha, x + 2, yTexto);
+      yTexto += alturaLinha;
     }
   });
+
+  // Próxima célula
+  col++;
+  blocoCount++;
+  if (col === cols) {
+    col = 0;
+    row++;
+    if (row === rows) {
+      row = 0;
+    }
+  }
+});
 
   doc.save('relatorio.pdf');
 }
@@ -1447,6 +1486,7 @@ document.getElementById('formMissionario').addEventListener('submit', async func
 </div>
 </body>
 </html>
+
 
 
 
