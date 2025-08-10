@@ -1059,21 +1059,49 @@ function dataBRParaISO(dataBR) {
 }
 
 function baixarRelatorioPDF() {
-  const texto = document.getElementById('relatorio').textContent || 'Nada para exportar.';
-  const doc = new window.jspdf.jsPDF();
-  // Divide texto grande em linhas para não estourar a página
-  const linhas = doc.splitTextToSize(texto, 180);
-  doc.text(linhas, 10, 10);
+  const texto = document.getElementById('relatorio').textContent.trim();
+  const dataInicial = document.getElementById('dataInicial').value;
+  const dataFinal = document.getElementById('dataFinal').value;
+
+  if (!dataInicial || !dataFinal) {
+    alert('Selecione o período antes de exportar.');
+    return;
+  }
+  if (!texto) {
+    alert('Gere o relatório antes de exportar.');
+    return;
+  }
+
+  const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  const linhas = doc.splitTextToSize(texto, 180); // largura útil
+  let y = 15;
+  const alturaLinha = 7;
+  const alturaMax = 280; // margem inferior (A4 é 297mm, deixa margem)
+  for (let i = 0; i < linhas.length; i++) {
+    if (y > alturaMax) {
+      doc.addPage();
+      y = 15;
+    }
+    doc.text(linhas[i], 10, y);
+    y += alturaLinha;
+  }
   doc.save('relatorio.pdf');
 }
 
 function baixarRelatorioExcel() {
-  const texto = document.getElementById('relatorio').textContent || '';
-  if (!texto.trim()) {
-    alert('Nada para exportar!');
+  const texto = document.getElementById('relatorio').textContent.trim();
+  const dataInicial = document.getElementById('dataInicial').value;
+  const dataFinal = document.getElementById('dataFinal').value;
+
+  if (!dataInicial || !dataFinal) {
+    alert('Selecione o período antes de exportar.');
     return;
   }
-  // Transforma cada linha em uma célula (simples), para relatórios mais elaborados precisa adaptar
+  if (!texto) {
+    alert('Gere o relatório antes de exportar.');
+    return;
+  }
+
   const linhas = texto.split('\n').map(l => [l]);
   const worksheet = XLSX.utils.aoa_to_sheet(linhas);
   const workbook = XLSX.utils.book_new();
@@ -1377,6 +1405,7 @@ document.getElementById('formMissionario').addEventListener('submit', async func
 </div>
 </body>
 </html>
+
 
 
 
